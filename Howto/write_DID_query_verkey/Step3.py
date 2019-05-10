@@ -9,6 +9,7 @@ from indy.error import IndyError, ErrorCode
 
 from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION
 from Step2 import print_log
+from did_methods import process_did_list
 
 async def step3(wallet_):
 
@@ -32,24 +33,29 @@ async def step3(wallet_):
         except IndyError as ex:
            if ex.error_code == ErrorCode.DidAlreadyExistsError:
             did_list = await did.list_my_dids_with_meta(wallet_['handle'])
-            print(did_list)
-            did_list = did_list[1:len(did_list)-1]
-            print(did_list)
-            did_list = json.loads(did_list)
+            dids = process_did_list(did_list)
 
-            steward_did = did_list['did']
-            steward_verkey = did_list['verkey']
+            steward_dids = json.loads(dids[0][0])
+            steward_did = steward_dids['did']
+            steward_verkey = steward_dids['verkey']
             
         print_log('Steward DID: ', steward_did)
-
-        
         print_log('Steward Verkey: ', steward_verkey)
 
         # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
         # this DID and its keys are secure and random. Again, we're not writing to the ledger yet.
 
         print_log('\n6. Generating and storing trust anchor DID and verkey\n')
+        try:
+            trust_anchor_did, trust_anchor_verkey = await did.create_and_store_my_did(wallet_['handle'], "{}")
+        except IndyError as ex:
+           if ex.error_code == ErrorCode.DidAlreadyExistsError:
+            did_list = await did.list_my_dids_with_meta(wallet_['handle'])
+            dids = process_did_list(did_list)  
 
-        trust_anchor_did, trust_anchor_verkey = await did.create_and_store_my_did(wallet_['handle'], "{}")
+            trust_anchor_dids = json.loads(dids[0][1])     
+            trust_anchor_did =  trust_anchor_dids['did']
+            trust_anchor_did =  trust_anchor_dids['verkey']
+
         print_log('Trust anchor DID: ', trust_anchor_did)
         print_log('Trust anchor Verkey: ', trust_anchor_verkey)
