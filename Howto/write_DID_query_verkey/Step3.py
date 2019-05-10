@@ -41,6 +41,8 @@ async def step3(wallet_):
             steward_verkey = did_list['verkey']
             
         print_log('Steward DID: ', steward_did)
+
+        
         print_log('Steward Verkey: ', steward_verkey)
 
         # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
