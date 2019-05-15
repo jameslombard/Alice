@@ -1,7 +1,3 @@
-# Step 2 code goes here.
-# Tell SDK which pool you are going to use. You should have already started
-# this pool using docker compose or similar. Here, we are dumping the config
-# just for demonstration purposes.
 
 import asyncio
 import json
@@ -18,12 +14,9 @@ def print_log(value_color="", value_noncolor=""):
     ENDC = '\033[0m'
     print(HEADER + value_color + ENDC + str(value_noncolor))
 
-async def step2(wallet_id, wallet_key):
 
-
-    wallet_ = {'config' : json.dumps({"id": wallet_id}) ,
-    'credentials' : json.dumps({"key": wallet_key})
-    }
+# Step 2 of Walk-Through
+async def create_wallet(name):
 
     # Creates a wallet using a generic config. Be sure to check the IndySDK python wrapper for
     # detailed documentation of the different variations this wallet config can look like.
@@ -37,13 +30,13 @@ async def step2(wallet_id, wallet_key):
     print_log('\n3. Create new identity wallet\n')
 
     try:        
-        await wallet.create_wallet(wallet_['config'], wallet_['credentials'])
+        await wallet.create_wallet(name['wallet_config'], name['wallet_credentials'])
     except IndyError as ex:
         if ex.error_code == ErrorCode.WalletAlreadyExistsError:
             pass
 
     print_log('\n4. Open identity wallet and get handle\n')
-    wallet_['handle'] = await wallet.open_wallet(wallet_['config'], wallet_['credentials'])
+    name['wallet'] = await wallet.open_wallet(name['wallet_config'], name['wallet_credentials'])
     
+    return(name)    
 
-    return wallet_    

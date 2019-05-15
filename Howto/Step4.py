@@ -1,4 +1,4 @@
-# Write the DID and Verkey for our trust anchor identity to the ledger.
+# Step 4: Write the DID and Verkey for our trust anchor identity to the ledger.
 
 import asyncio
 import pprint
@@ -7,23 +7,18 @@ from indy import ledger, did
 from Step2 import print_log
 from did_methods import process_did_list
 
-async def step4(pool_, wallet_, steward, Trust_Anchor):
+async def write_did_and_verkey_to_ledger(pool_,steward, name):
     
-    # did_list = await did.list_my_dids_with_meta(wallet_['handle'])
-    # dids = process_did_list(did_list)  # dids: List of form dids[0][x], where x = '{"key : "value"}' string contain dids and metadata
-    # print(dids)
-    # print(len(dids[0]))
-
     # Here, we are building the transaction payload that we'll send to write the Trust Anchor identity to the ledger.
     # We submit this transaction under the authority of the steward DID that the ledger already recognizes.
     # This call will look up the private key of the steward DID in our wallet, and use it to sign the transaction.
 
     print_log('\n7. Building NYM request to add Trust Anchor to the ledger\n')
     nym_transaction_request = await ledger.build_nym_request(submitter_did=steward['did'],
-                                                                target_did=Trust_Anchor['did'],
-                                                                ver_key=Trust_Anchor['verkey'],
+                                                                target_did=name['did'],
+                                                                ver_key=name['verkey'],
                                                                 alias=None,
-                                                                role='TRUST_ANCHOR')
+                                                                role=name['role'])
     print_log('NYM transaction request: ')
     pprint.pprint(json.loads(nym_transaction_request))
 
@@ -34,7 +29,7 @@ async def step4(pool_, wallet_, steward, Trust_Anchor):
 
     print_log('\n8. Sending NYM request to the ledger\n')
     nym_transaction_response = await ledger.sign_and_submit_request(pool_handle=pool_['handle'],
-                                                                    wallet_handle=wallet_['handle'],
+                                                                    wallet_handle=name['wallet'],
                                                                     submitter_did=steward['did'],
                                                                     request_json=nym_transaction_request)
     print_log('NYM transaction response: ')

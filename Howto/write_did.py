@@ -9,6 +9,7 @@ a client, which are used to create GET_NYM request to query the ledger and confi
 For the sake of simplicity, a single wallet is used. In the real world scenario, three different wallets
 would be used and DIDs would be exchanged using some channel of communication
 """
+
 import asyncio
 import json
 
@@ -17,13 +18,9 @@ import pprint
 from indy import pool, ledger, wallet, did
 from indy.error import IndyError, ErrorCode
 
-from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION
+from identity import ID
 
-from Step2 import step2, print_log 
-from Step3 import step3
-from Step4 import step4
-from Step5 import step5
-from pool_config import pool_configuration
+from write_did_functions import pool_configuration, restart_pool,  print_log, create_wallet, create_did_and_verkey, nym_request, query_did, cleanup
 
 # Get input from the user:
 # pool_name = input("Please input the pool name:")
@@ -31,37 +28,45 @@ from pool_config import pool_configuration
 # wallet_key = input("Please input the wallet Key:")
 
 pool_name = 'pool'
-wallet_id = 'wallet'
-wallet_key = 'wallet_key'
+name = 'trust_anchor'
+role = 'TRUST_ANCHOR'
+trust_anchor = {'name': name}
 
 async def write_nym_and_query_verkey():
 
     try:
-        # Set protocol version 2 to work with Indy Node 1.4
      
         print_log('\n1. Create new pool ledger configuration to connect to ledger.\n')
         
-        # Step 2 code goes here.
+        # Step 1: Pool configuration
+
         pool_ = await pool_configuration(pool_name)
+
         print(pool_)
-
         print_log('\n2. Open ledger and get handle\n')
-
+            
         pool_['handle'] = await pool.open_pool_ledger(pool_['name'], None)
-
-        wallet_ = await step2(wallet_id, wallet_key)
         
-        # Step 3 code goes here.
+        # Step 2: Create and open wallet:
 
-        steward, Trust_Anchor = await step3(wallet_)
+        trust_anchor = await ID(name,role)
+        trust_anchor = await create_wallet(trust_anchor)
+        
+        # Step 3 code goes here:
 
-        # Step 4 code goes here.
+        steward,trust_anchor = await create_did_and_verkey(trust_anchor)
 
-        await step4(pool_,wallet_,steward,Trust_Anchor)
+        # Step 4 code goes here:
 
-        # Step 5 code goes here.
+        await nym_request(pool_,steward,trust_anchor)
 
-        await step5(wallet_,steward,Trust_Anchor,pool_)
+        # Step 5 code goes here:
+
+        await query_did(pool_,steward,trust_anchor)
+
+        # Close and delete pool and wallet:
+
+        await cleanup(pool_,trust_anchor)
 
     except IndyError as e:
         print('Error occurred: %s' % e)
