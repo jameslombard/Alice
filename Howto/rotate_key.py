@@ -24,36 +24,37 @@ from identity import ID
 from write_did_functions import print_log, pool_configuration,create_wallet,create_did_and_verkey, nym_request, replace_keys, cleanup
 
 pool_name = 'pool'
-name = 'trust_anchor'
-role = 'TRUST_ANCHOR'
-trust_anchor = {'name': name}
 
 async def rotate_key_on_the_ledger():
     try:   
         # Step 1: Pool configuration   
         
-        print_log('\n1. Create new pool ledger configuration to connect to ledger.\n')
         pool_= await pool_configuration(pool_name)
-        print(pool_)
-        print_log('\n2. Open ledger and get handle\n')
-        pool_['handle'] = await pool.open_pool_ledger(pool_['name'], None)
 
         # Step 2: Create ID and create and open wallet:
 
-        trust_anchor = await ID(name,role)
+        steward = await ID('steward')
+        steward = await create_wallet(steward)
+        trust_anchor = await ID('trust_anchor')
         trust_anchor = await create_wallet(trust_anchor)
 
         # Add Seward and Trust Anchor DID and Verkey to the wallet:
 
-        steward,trust_anchor = await create_did_and_verkey(trust_anchor)
+        steward = await create_did_and_verkey(steward)
+        trust_anchor = await create_did_and_verkey(trust_anchor)
 
         # Write the DID and Verkey for our trust anchor identity to the ledger
 
-        await nym_request(pool_,steward,trust_anchor)
+        nymrole = 'TRUST_ANCHOR'
+        await nym_request(pool_,steward,trust_anchor,nymrole)
 
-        # Step 3_rk: replace Trust Anchor keys in the wallet.
+        # Rotate Trust Anchor keys in the wallet.
 
-        await replace_keys(pool_,trust_anchor)
+        await replace_keys(pool_,trust_anchor,trust_anchor,nymrole)
+
+        # Cleaunup:
+
+        await cleanup(pool_,steward)
         await cleanup(pool_,trust_anchor)
 
     except IndyError as e:

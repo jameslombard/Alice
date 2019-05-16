@@ -27,46 +27,63 @@ from write_did_functions import pool_configuration, restart_pool,  print_log, cr
 # wallet_id = input("Please input the wallet ID:")
 # wallet_key = input("Please input the wallet Key:")
 
+# Define Pool:
 pool_name = 'pool'
-name = 'trust_anchor'
-role = 'TRUST_ANCHOR'
-trust_anchor = {'name': name}
 
 async def write_nym_and_query_verkey():
 
     try:
-     
-        print_log('\n1. Create new pool ledger configuration to connect to ledger.\n')
-        
+           
         # Step 1: Pool configuration
 
         pool_ = await pool_configuration(pool_name)
+      
+        # Step 2: Create and open wallets:
 
-        print(pool_)
-        print_log('\n2. Open ledger and get handle\n')
-            
-        pool_['handle'] = await pool.open_pool_ledger(pool_['name'], None)
-        
-        # Step 2: Create and open wallet:
-
-        trust_anchor = await ID(name,role)
+        steward = await ID('steward')
+        steward = await create_wallet(steward)
+        trust_anchor = await ID('trust_anchor')
         trust_anchor = await create_wallet(trust_anchor)
         
-        # Step 3 code goes here:
+        # Step 3: Create did and verkey
 
-        steward,trust_anchor = await create_did_and_verkey(trust_anchor)
+        steward = await create_did_and_verkey(steward)
+        trust_anchor = await create_did_and_verkey(trust_anchor)
 
-        # Step 4 code goes here:
+        # Step 4: NYM request:
 
-        await nym_request(pool_,steward,trust_anchor)
+        nymrole = 'TRUST_ANCHOR'
+        await nym_request(pool_,steward,trust_anchor,nymrole)
 
-        # Step 5 code goes here:
+        # Step 5: Query DID (GET_NYM request):
 
-        await query_did(pool_,steward,trust_anchor)
+        print_log('\n9. Generating and storing DID and verkey representing a Client '
+                    'that wants to obtain Trust Anchor Verkey\n')
 
-        # Close and delete pool and wallet:
+        client = await ID('client')
+        client = await create_wallet(client)
+        client['did'],client['verkey'] = await did.create_and_store_my_did(client['wallet'], "{}")
+
+        print_log('Client DID: ', client['did'])
+        print_log('Client Verkey: ', client['verkey'])
+
+        get_nym_response = await query_did(pool_,steward,trust_anchor)
+
+        # See whether we received the same info that we wrote the ledger in step 4.
+        
+        print_log('\n12. Comparing Trust Anchor verkey as written by Steward and as retrieved in GET_NYM '
+                    'response submitted by Client\n')
+
+        print_log('Written by Steward: ', trust_anchor['verkey'])
+        verkey_from_ledger = json.loads(get_nym_response['result']['data'])['verkey']
+        print_log('Queried from ledger: ', verkey_from_ledger)
+        print_log('Matching: ', verkey_from_ledger == trust_anchor['verkey'])
+        
+        # Close and delete pool and wallets:
 
         await cleanup(pool_,trust_anchor)
+        await cleanup(pool_,steward)
+        await cleanup(pool_,client)
 
     except IndyError as e:
         print('Error occurred: %s' % e)

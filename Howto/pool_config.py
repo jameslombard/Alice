@@ -23,15 +23,21 @@ async def pool_configuration(pool_name):
         if ex.error_code == ErrorCode.CommonIOError:
             pass
 
+    print_log('\n1. Create new pool ledger configuration to connect to ledger.\n')
+
     try:        
         await pool.create_pool_ledger_config(config_name=pool_['name'], config=pool_['config'])
     except IndyError as ex:
         if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
             pass
 
-    await pool.set_protocol_version(PROTOCOL_VERSION)
-
     print(genesis_file_path)
+
+    print_log('\n2. Open ledger and get handle\n')
+    pool_['handle'] = await pool.open_pool_ledger(pool_['name'], None)
+
+    # Set pool PROTOCAL VERSION:
+    await pool.set_protocol_version(PROTOCOL_VERSION)
 
     return(pool_)
 

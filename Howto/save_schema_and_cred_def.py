@@ -17,45 +17,44 @@ from write_did_functions import print_log, pool_configuration, create_wallet, cr
 from save_schema_and_cred_def_functions import schema_request, credential_definition
 
 pool_name = 'pool'
-name = 'trust_anchor'
-role = 'TRUST_ANCHOR'
-trust_anchor = {'name': name}
 
 async def write_schema_and_cred_def():
     try:
     # "Scaffolding:"
 
-       # Pool config:
+        # Step 1: Pool configuration
 
         pool_ = await pool_configuration(pool_name)
-        print(pool_)
-        print_log('\n2. Open ledger and get handle\n')           
-        pool_['handle'] = await pool.open_pool_ledger(pool_['name'], None)
-        
-        # Create and open wallet:
+      
+        # Step 2: Create and open wallets:
 
-        trust_anchor = await ID(name,role)
+        steward = await ID('steward')
+        steward = await create_wallet(steward)
+        trust_anchor = await ID('trust_anchor')
         trust_anchor = await create_wallet(trust_anchor)
         
-        # Create did and verkey for steward and trust anchor:
+        # Step 3: Create did and verkey
 
-        steward,trust_anchor = await create_did_and_verkey(trust_anchor)
+        steward = await create_did_and_verkey(steward)
+        trust_anchor = await create_did_and_verkey(trust_anchor)
 
-        # write did and verkey to the ledger
-        
-        await nym_request(pool_,steward,trust_anchor) 
+        # Step 4: NYM request:
 
-    # Step 3 code goes here.
+        nymrole = 'TRUST_ANCHOR' # Define role for NYM transaction
+        await nym_request(pool_,steward,trust_anchor,nymrole)
 
-        schema = await schema_request(pool_,steward,trust_anchor)
+    # Step 3: Build and submit a schema request
+
+        schema = await schema_request(pool_,steward)
 
     # Step 4 code goes here.
 
-        await credential_definition(pool_,trust_anchor,schema)
+        cred_def = await credential_definition(pool_,trust_anchor,schema)
 
     # Clean-up:
 
         await cleanup(pool_,trust_anchor)
+        await cleanup(pool_,steward)
  
     except IndyError as e:
         print('Error occurred: %s' % e)
