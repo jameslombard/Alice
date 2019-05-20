@@ -22,8 +22,6 @@ async def prover_wallet_and_link_secret(prover):
         
         return(prover)
 
-
-
 # 'Three steps embodying a negotiation pattern that is used in many Indy interactions (proving)':
 # Either party can begin; the other party acknowledges and accepts--or makes a counter proposal. 
 # In the case of a counter proposal, a new negotiation cycle begins; 
@@ -33,7 +31,7 @@ async def prover_wallet_and_link_secret(prover):
 # didn't initially propose); however, we don't cover that advanced workflow here.
 
 async def offer_credential(issuer,cred):
-        # 14. Issuer creates offer:P
+        # 14. Issuer creates offer:
 
         print_log('\n14. Issuer (Trust Anchor) is creating a Credential Offer for Prover\n')
 
@@ -91,4 +89,3 @@ async def process_and_store_credential(prover,cred):
                                                 rev_reg_def_json=None)
         return(cred)
 
-        

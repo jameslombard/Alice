@@ -88,12 +88,10 @@ async def write_nym_and_query_verkey():
     except IndyError as e:
         print('Error occurred: %s' % e)
 
-
 def main():
     loop = asyncio.get_event_loop()
     loop.run_until_complete(write_nym_and_query_verkey())
     loop.close()
-
 
 if __name__ == '__main__':
     main()

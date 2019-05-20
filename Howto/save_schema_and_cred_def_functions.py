@@ -74,6 +74,13 @@ async def get_schema_request(pool_,submitter,schema):
 
 async def credential_definition(pool_,issuer,schema):
 
+    # Define a credential definition:
+    # Cred['def'] : - id
+    #               - json
+    #               - tag 
+    #               - type
+    #               - config
+
     # 11.
     print_log('\n11. Creating and storing CRED DEFINITION using anoncreds as Trust Anchor, for the given Schema\n')
     
@@ -82,7 +89,6 @@ async def credential_definition(pool_,issuer,schema):
     cred_def['type'] = 'CL'
     cred_def['config'] = json.dumps({"support_revocation": False})
 
-   
     (cred_def['id'], cred_def['json']) = await anoncreds.issuer_create_and_store_credential_def(wallet_handle=issuer['wallet'],
                                                                                           issuer_did=issuer['did'], 
                                                                                           schema_json=schema['json'],

@@ -17,15 +17,15 @@ async def ID(IDname):
     # - Verifier
     
     name = {'name': IDname}
-    name['wallet_config'] = json.dumps({'id':name['name']+'_'+'wallet_id'})
+    name['wallet_config'] = json.dumps({'id':name['name']+'_'+'wallet'})
     name['wallet_credentials'] = json.dumps({'key':name['name']+'_'+'wallet_key'})
 
     # Deletes wallet if it already exists:
 
-    try:
-        await wallet.delete_wallet(name['wallet_config'], name['wallet_credentials'])
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.WalletNotFoundError:
-            pass
+    # try:
+    #     await wallet.delete_wallet(name['wallet_config'], name['wallet_credentials'])
+    # except IndyError as ex:
+    #     if ex.error_code == ErrorCode.WalletNotFoundError:
+    #         pass
 
     return(name)

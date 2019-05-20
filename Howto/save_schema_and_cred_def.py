@@ -50,7 +50,8 @@ async def write_schema_and_cred_def():
     # Step 4 code goes here.
 
         cred_def = await credential_definition(pool_,trust_anchor,schema)
-
+        cred = {'def': cred_def}
+        
     # Clean-up:
 
         await cleanup(pool_,trust_anchor)

@@ -74,6 +74,7 @@ async def create_wallet(name):
 
     try:        
         await wallet.create_wallet(name['wallet_config'], name['wallet_credentials'])
+        print('pow')
     except IndyError as ex:
         if ex.error_code == ErrorCode.WalletAlreadyExistsError:
             pass
@@ -126,7 +127,7 @@ async def create_did_and_verkey(name):
         if ex.error_code == ErrorCode.DidAlreadyExistsError:
             pass
 
-    msg = '\n6. Generating and storing ' + name['name'] + 'DID and verkey\n'
+    msg = '\n6. Generating and storing ' + name['name'] + ' DID and verkey\n'
     print_log(msg)
 
     print_log(name['name']+' DID:', name['did'])
@@ -186,7 +187,7 @@ async def query_did(pool_,submitter,target):
                                                             target_did=target['did'])
     print_log('GET_NYM request: ')
     pprint.pprint(json.loads(get_nym_request))
-
+    
     print_log('\n11. Sending the Get NYM request to the ledger\n')
 
     get_nym_response_json = await ledger.submit_request(pool_handle=pool_['handle'],

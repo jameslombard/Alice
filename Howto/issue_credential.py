@@ -32,7 +32,7 @@ async def issue_credential():
     try:
     # "Scaffolding:"
 
-        # Step 1: Pool configuration
+        # Step 1: Pool configuration:
 
         pool_ = await pool_configuration(pool_name)
       
@@ -43,7 +43,7 @@ async def issue_credential():
         trust_anchor = await ID('trust_anchor')
         trust_anchor = await create_wallet(trust_anchor)
         
-        # Step 3: Create did and verkey
+        # Step 3: Create did and verkey:
 
         steward = await create_did_and_verkey(steward)
         trust_anchor = await create_did_and_verkey(trust_anchor)
@@ -53,7 +53,7 @@ async def issue_credential():
         nymrole = 'TRUST_ANCHOR' # Define role for NYM transaction
         await nym_request(pool_,steward,trust_anchor,nymrole)
 
-        # Step 5: Rotate keys (skipped)
+        # Step 5: Rotate keys (skipped):
 
     # Step 3: Build and submit a schema request
 
@@ -66,7 +66,6 @@ async def issue_credential():
         # Define the credential based on the credential definition:
 
         cred = {'def': cred_def}
-
         print_log('Credential:')
         pprint.pprint(cred)
 
