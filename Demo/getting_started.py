@@ -46,7 +46,7 @@ async def run():
     logger.info("Getting started -> started")
 
     pool_ = {
-        'name': 'pool'
+        'name': 'pool1'
     }
     logger.info("Open Pool Ledger: {}".format(pool_['name']))
     pool_['genesis_txn_path'] = get_pool_genesis_txn_path(pool_['name'])

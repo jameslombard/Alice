@@ -10,7 +10,7 @@ from write_did_functions import print_log
 
 async def schema_request(pool_,submitter):
     # 9.
-    print_log('\n9. Build the SCHEMA request to add new schema to the ledger as a Steward\n')
+    print_log('\n Build the SCHEMA request to add new schema to the ledger as a Steward\n')
 
     # Define Schema:    
     schema = {
@@ -44,7 +44,7 @@ async def schema_request(pool_,submitter):
     pprint.pprint(json.loads(schema_request))
 
     # 10.
-    print_log('\n10. Sending the SCHEMA request to the ledger\n')
+    print_log('\n Sending the SCHEMA request to the ledger\n')
 
     schema_response = await ledger.sign_and_submit_request(pool_handle=pool_['handle'],
                                                             wallet_handle=submitter['wallet'],
@@ -56,7 +56,7 @@ async def schema_request(pool_,submitter):
     schema_response_dict = json.loads(schema_response)
 
     if schema_response_dict['op'] == 'REJECT':
-        print_log('\nSending GET SCHEMA request to the ledger for existing Version Number\n')
+        print_log('\n Sending GET SCHEMA request to the ledger for existing Version Number\n')
         schema_response = await get_schema_request(pool_,submitter,schema)
 
     print_log('Schema response:')
@@ -82,8 +82,15 @@ async def credential_definition(pool_,issuer,schema):
     #               - type
     #               - config
 
+    #Next, we create a credential definition. 
+    # This references the schema that we just added, and announces 
+    # who is going to be issuing credentials with that schema (our trust anchor identity, in this case), 
+    # what type of signature method they plan to use ("CL" = "Camenisch Lysyanskya", 
+    # the default method used for zero-knowledge proofs by indy), 
+    # how they plan to handle revocation, and so forth.
+
     # 11.
-    print_log('\n11. Creating and storing CRED DEFINITION using anoncreds as Trust Anchor, for the given Schema\n')
+    print_log('\n Creating and storing CRED DEFINITION using anoncreds as Trust Anchor, for the given Schema\n')
     
     cred_def = {'Issuer':issuer['name']}
     cred_def['tag'] = 'cred_def_tag'

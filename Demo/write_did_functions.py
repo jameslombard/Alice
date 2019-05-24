@@ -10,7 +10,6 @@ from indy.error import IndyError, ErrorCode
 from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine
 from identity import ID
 
-
 def print_log(value_color="", value_noncolor=""):
     """set the colors for text."""
     HEADER = '\033[92m'
@@ -18,7 +17,11 @@ def print_log(value_color="", value_noncolor=""):
     print(HEADER + value_color + ENDC + str(value_noncolor))
 
 # Step 1 of write_did:
-async def pool_configuration(pool_name):
+async def pool_configuration():
+
+    pool_name = input('Please specify the pool name:')
+
+    print_log('\n Setting up pool configuration.\n')
 
     pool_= {'name': pool_name}
     genesis_file_path = get_pool_genesis_txn_path(pool_name)
@@ -42,20 +45,23 @@ async def pool_configuration(pool_name):
 
     print(genesis_file_path)
 
-    print_log('\n2. Open ledger and get handle\n')
+    print_log('\n Open ledger and get handle\n')
     pool_['handle'] = await pool.open_pool_ledger(pool_['name'], None)
+
+    file_name = 'pool.pickle'
+    with open(file_name, 'wb') as f:
+        pickle.dump(pool_, f)
 
     return(pool_)
 
 # Function for submitting a pool restart request:
-
 async def restart_pool(pool_,submitter):
     restart_request = await ledger.build_pool_restart_request(submitter['did'],'start','14:40')
     restart_request_response = await ledger.sign_and_submit_request(pool_handle=pool_['handle'],
                                                                     wallet_handle=submitter['wallet'],
                                                                     submitter_did=submitter['did'],
                                                                     request_json=restart_request)
-    print_log('Pool Restart Request Response: ')
+    print_log('\n Pool Restart Request Response \n')
     pprint.pprint(json.loads(restart_request_response))
 
 # Step 2 of write_did:
@@ -70,25 +76,28 @@ async def create_wallet(name):
     # wallet we're now going to open it which allows us to interact with it by passing the
     # wallet_handle around.
 
-    msg = '\n3. Create new '+ name['name']+ ' wallet\n'
-    print_log(msg)
+    if 'wallet' in name:
+        return name
+    else:
 
-    try:        
-        await wallet.create_wallet(name['wallet_config'], name['wallet_credentials'])
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.WalletAlreadyExistsError:
-            pass
+        try:       
+            msg = '\n Create new '+ name['name']+ ' wallet\n'
+            print_log(msg) 
+            await wallet.create_wallet(name['wallet_config'], name['wallet_credentials'])
+        except IndyError as ex:
+            if ex.error_code == ErrorCode.WalletAlreadyExistsError:
+                pass
 
-    msg = '\n4. Open '+ name['name']+ ' wallet and get handle\n'
-    print_log(msg)
+        msg = '\n Open '+ name['name']+ ' wallet and get handle\n'
+        print_log(msg)
 
-    try:
-        name['wallet'] = await wallet.open_wallet(name['wallet_config'], name['wallet_credentials'])
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.WalletAlreadyOpenedError:
-            pass
+        try:
+            name['wallet'] = await wallet.open_wallet(name['wallet_config'], name['wallet_credentials'])
+        except IndyError as ex:
+            if ex.error_code == ErrorCode.WalletAlreadyOpenedError:
+                pass
 
-    return(name)    
+        return(name)    
 
 # Step 3 of write_did:
 async def create_did_and_verkey(name):
@@ -108,7 +117,7 @@ async def create_did_and_verkey(name):
         did_json = json.dumps({'seed': name['seed']})       
 
         try:
-            print_log('\n5. Generate and store steward DID and verkey\n')
+            print_log('\n Generate and store steward DID and verkey\n')
             name['did'],name['verkey'] = await did.create_and_store_my_did(name['wallet'], did_json) # Returns newly created steward DID and verkey
         except IndyError as ex:
             if ex.error_code == ErrorCode.DidAlreadyExistsError:
@@ -127,7 +136,7 @@ async def create_did_and_verkey(name):
         if ex.error_code == ErrorCode.DidAlreadyExistsError:
             pass
 
-    msg = '\n6. Generating and storing ' + name['name'] + ' DID and verkey\n'
+    msg = '\n Generating and storing ' + name['name'] + ' DID and verkey\n'
     print_log(msg)
 
     print_log(name['name']+' DID:', name['did'])
@@ -153,7 +162,7 @@ async def nym_request(pool_,submitter,target,nymrole):
     # We submit this transaction under the authority of the steward DID that the ledger already recognizes.
     # This call will look up the private key of the steward DID in our wallet, and use it to sign the transaction.
 
-    print_log('\n7. Building NYM request to add Trust Anchor to the ledger\n')
+    print_log('\n Building NYM request to add Trust Anchor to the ledger\n')
     nym_transaction_request = await ledger.build_nym_request(submitter_did=submitter['did'],
                                                             target_did=target['did'],
                                                             ver_key=target['verkey'],
@@ -167,7 +176,7 @@ async def nym_request(pool_,submitter,target,nymrole):
     # and communicate with the ledger in a different piece of code (e.g., that lives outside the safe internal
     # network).
 
-    print_log('\n8. Sending NYM request to the ledger\n')
+    print_log('\n Sending NYM request to the ledger\n')
     nym_transaction_response = await ledger.sign_and_submit_request(pool_handle=pool_['handle'],
                                                                     wallet_handle=submitter['wallet'],
                                                                     submitter_did=submitter['did'],
@@ -179,16 +188,16 @@ async def nym_request(pool_,submitter,target,nymrole):
     # At this point, we have successfully written a new identity to the ledger. Our next step will be to query it.
 
 # Step 5 of write_did:
-async def query_did(pool_,submitter,target):
+async def get_nym_request(pool_,submitter,target):
 
-    print_log('\n10. Building the GET_NYM request to query trust anchor verkey\n')
+    print_log('\n Building the GET_NYM request to query trust anchor verkey\n')
 
     get_nym_request = await ledger.build_get_nym_request(submitter_did=submitter['did'],
                                                             target_did=target['did'])
     print_log('GET_NYM request: ')
     pprint.pprint(json.loads(get_nym_request))
     
-    print_log('\n11. Sending the Get NYM request to the ledger\n')
+    print_log('\n Sending the Get NYM request to the ledger\n')
 
     get_nym_response_json = await ledger.submit_request(pool_handle=pool_['handle'],
                                                         request_json=get_nym_request)
@@ -203,12 +212,12 @@ async def query_did(pool_,submitter,target):
 
 async def replace_keys(pool_,submitter,target,nymrole):
 
-    print_log('\n9. Generating new verkey of trust anchor in wallet\n')
+    print_log('\n Generating new verkey of trust anchor in wallet\n')
 
     new_verkey = await did.replace_keys_start(submitter['wallet'], submitter['did'], "{}")
     print_log('New Trust Anchor Verkey: ', new_verkey)
     
-    print_log('\n10. Building NYM request to update new verkey to ledger\n')
+    print_log('\n Building NYM request to update new verkey to ledger\n')
 
     nym_request = await ledger.build_nym_request(submitter_did=submitter['did'], 
                                                     target_did=submitter['did'], 
@@ -219,7 +228,7 @@ async def replace_keys(pool_,submitter,target,nymrole):
     print_log('NYM request:')
     pprint.pprint(json.loads(nym_request))
     
-    print_log('\n11. Sending NYM request to the ledger\n')
+    print_log('\n Sending NYM request to the ledger\n')
 
     nym_response = await ledger.sign_and_submit_request(pool_handle=pool_['handle'],
                                                             wallet_handle=submitter['wallet'],
@@ -229,13 +238,17 @@ async def replace_keys(pool_,submitter,target,nymrole):
     print_log('NYM response:')
     pprint.pprint(json.loads(nym_response))
     
-    print_log('\n12. Apply new verkey in wallet\n')
+    print_log('\n Apply new verkey in wallet\n')
 
     await did.replace_keys_apply(submitter['wallet'], submitter['did'])
 
 async def cleanup(pool_,name):    # Do some cleanup.
 
-    msg = '\n13. Closing ' + name['name'] + ' wallet and pool\n'    
+    # Delete wallet: 0 -> No ; 1 -> Yes
+
+    delete_wallet = 0 
+
+    msg = '\n Closing ' + name['name'] + ' wallet and pool\n'    
 
     await wallet.close_wallet(name['wallet'])
 
@@ -245,18 +258,19 @@ async def cleanup(pool_,name):    # Do some cleanup.
         if ex.error_code == ErrorCode.PoolLedgerInvalidPoolHandle:
             pass
 
-    try:
-        await pool.delete_pool_ledger_config(pool_['name'])
-        print_log('\n14. Deleting pool ledger config\n')
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.CommonIOError:
-            pass
 
-    msg = '\n15. Deleting ' + name['name'] + ' wallet\n'
+    msg = '\n Deleting ' + name['name'] + ' wallet\n'
     print_log(msg)
 
     try:
         await wallet.delete_wallet(name['wallet_config'], name['wallet_credentials'])
     except IndyError as ex:
         if ex.error_code == ErrorCode.WalletNotFoundError:
+            pass
+
+    try:
+        await pool.delete_pool_ledger_config(pool_['name'])
+        print_log('\n Deleting pool ledger config\n')
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.CommonIOError:
             pass

@@ -9,8 +9,7 @@ from identity import ID
 from write_did_functions import create_wallet, create_did_and_verkey
 
 async def init():
-    me = input('Who are you? ').strip()
-    me = await ID(me)
+    me = await ID()
     
     # 1. Create Wallet and Get Wallet Handle
 
@@ -21,7 +20,7 @@ async def init():
     them = {'did': their[0] ,
             'verkey': their[1]}
 
-    return me, them
+    return me,them
 
 async def prep(me,them,msg):
     msg = bytes(msg, "utf-8")
@@ -39,5 +38,3 @@ async def read(me):
     decrypted = await crypto.auth_decrypt(me['wallet'],me['verkey'], encrypted)
     # decrypted = await crypto.anon_decrypt(wallet_handle, my_vk, encrypted)
     print(decrypted)
-    print(type(decrypted))
-    print(decrypted[1])

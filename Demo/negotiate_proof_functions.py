@@ -11,7 +11,7 @@ from write_did_functions import print_log
 
 async def build_proof_request(issuer,schema):
 # 18.
-        print_log('\n18. Prover gets Credentials for Proof Request\n')
+        print_log('\n Prover gets Credentials for Proof Request\n')
         proof_request = {
             'nonce': '123432421212',
             'name': 'proof_req_1',
@@ -44,7 +44,7 @@ async def build_proof_request(issuer,schema):
 async def fetch_credentials(prover, proof_req):
 
         # 19. 
-        print_log('\n19. Prover gets Credentials for attr1_referent and predicate1_referent\n')
+        print_log('\n Prover gets Credentials for attr1_referent and predicate1_referent\n')
         proof_req['json'] = json.dumps(proof_req)
         prover['cred_search_handle'] = \
             await anoncreds.prover_search_credentials_for_proof_req(prover['wallet'], proof_req['json'], None)
@@ -68,7 +68,7 @@ async def fetch_credentials(prover, proof_req):
 async def create_proof(proof_req,prover,cred,schema):
 
                 # 20.
-        print_log('\n20. Prover creates Proof for Proof Request\n')
+        print_log('\n Prover creates Proof for Proof Request\n')
         prover['requested_creds'] = json.dumps({
             'self_attested_attributes': {},
             'requested_attributes': {
@@ -104,7 +104,7 @@ async def create_proof(proof_req,prover,cred,schema):
 
 async def verify_proof(proof_req,proof,cred,schema):        
         # 21.
-        print_log('\n21. Verifier is verifying proof from Prover\n')
+        print_log('\n Verifier is verifying proof from Prover\n')
         assert await anoncreds.verifier_verify_proof(proof_req['json'],
                                                              proof['json'],
                                                              schema['proof_json'],

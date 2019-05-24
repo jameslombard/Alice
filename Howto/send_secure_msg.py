@@ -6,14 +6,6 @@ import re
 from indy import crypto, did, wallet
 from send_secure_msg_functions import init, prep,read
 
-# Step 5 code goes here, replacing the prep() stub.
-
-
-# Step 3 code goes here, replacing the init() stub.
-
-
-# Step 6 code goes here, replacing the read() stub.
-
 async def demo():
     me,them = await init()
 
@@ -22,7 +14,9 @@ async def demo():
         cmd = argv[0].lower()
         rest = ' '.join(argv[1:])
         if re.match(cmd, 'prep'):
+            # Call prep
             await prep(me,them,rest)
+            # Call read
         elif re.match(cmd, 'read'):
             await read(me)
         elif re.match(cmd, 'quit'):

@@ -16,7 +16,7 @@ async def prover_wallet_and_link_secret(prover):
         # prover['wallet'] = await wallet.open_wallet(prover['wallet_config'], prover['wallet_credentials'])
 
         # 13.
-        print_log('\n13. Prover is creating Link Secret\n')
+        print_log('\n Prover is creating Link Secret\n')
         prover['link_secret_name'] = 'link_secret'
         prover['link_secret_id'] = await anoncreds.prover_create_master_secret(prover['wallet'],
                                                                      prover['link_secret_name'])  
@@ -34,7 +34,7 @@ async def prover_wallet_and_link_secret(prover):
 async def offer_credential(issuer,cred):
         # 14. Issuer creates offer:
 
-        print_log('\n14. Issuer (Trust Anchor) is creating a Credential Offer for Prover\n')
+        print_log('\n Issuer (Trust Anchor) is creating a Credential Offer for Prover\n')
 
         cred['offer_json'] = await anoncreds.issuer_create_credential_offer(wallet_handle=issuer['wallet'], 
                                                                             cred_def_id=cred['def']['id'])
@@ -45,7 +45,7 @@ async def offer_credential(issuer,cred):
 async def request_credential(prover,cred):
 
         # 15. Prover creates credential request:
-        print_log('\n15. Prover creates Credential Request for the given credential offer\n')
+        print_log('\n Prover creates Credential Request for the given credential offer\n')
         (cred['req_json'], cred['req_metadata_json']) = await anoncreds.prover_create_credential_req(wallet_handle=prover['wallet'], 
                                                                                                prover_did=prover['did'], 
                                                                                                cred_offer_json=cred['offer_json'], 
@@ -59,7 +59,7 @@ async def request_credential(prover,cred):
 async def create_credential(issuer,cred):
 
         # 16. Issuer creates credential:
-        print_log('\n16. Issuer (Trust Anchor) creates Credential for Credential Request\n')
+        print_log('\n Issuer (Trust Anchor) creates Credential for Credential Request\n')
         
         cred['values_json']= json.dumps({
             'sex': ['male', '5944657099558967239210949258394887428692050081607692519917050011144233115103'],
@@ -81,7 +81,7 @@ async def create_credential(issuer,cred):
 async def process_and_store_credential(prover,cred):
 
         # 17.
-        print_log('\n17. Prover processes and stores Credential\n')
+        print_log('\n Prover processes and stores Credential\n')
         await anoncreds.prover_store_credential(wallet_handle=prover['wallet'], 
                                                 cred_id=None, 
                                                 cred_req_metadata_json=cred['req_metadata_json'], 
