@@ -20,6 +20,7 @@ from secure_messenger import messenger
 
 async def connection():
 
+    # Added comment
     # Typically you would want to enter the name of B:
     # B_name = input("Enter the name of party B for making connection:")
 
