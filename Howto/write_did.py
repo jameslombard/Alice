@@ -36,7 +36,7 @@ async def write_nym_and_query_verkey():
            
         # Step 1: Pool configuration
 
-        pool_ = await pool_configuration(pool_name)
+        await pool_configuration(pool_name)
       
         # Step 2: Create and open wallets:
 

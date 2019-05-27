@@ -23,10 +23,10 @@ from secure_messenger import messenger
 
 print_log('\n Welcome to Sovrin:\n')
 print_log('\n ______________________________________________________________\n')
-print_log('\n 1. Connect to the pool of genesis nodes on the ledger. \n')
+print_log('\n 1. Connect to the Sovrin nodes pool. \n')
 print_log('\n 2. Sovrin Messenger. \n')
-print_log('\n 3. Create/Load identity owner. \n')
-print_log('\n 4. Create/Open wallet for identity owner. \n')
+print_log('\n 3. Create/Load identity. \n')
+print_log('\n 4. Create and Open wallet for identity. \n')
 print_log('\n 5. Create DID and verkey for Identity. \n')
 print_log('\n 6. Create Connection (Onboarding). \n')    
 print_log('\n 7. Create NYM Request. \n')
@@ -58,17 +58,18 @@ async def run():
         # Pool config:
         if Sov==1:   
 
-            pool_ = await pool_configuration()
+            pool_ = await pool_configuration(IP)
 
         # Send secure message:
         elif Sov==2:
 
-            await messenger(IP)
+            msg = None 
+            await messenger(IP,msg)
 
         # Create ID: 
         elif Sov==3:
 
-            await ID() # This step creates and stores a new identity owner to the ledger.
+            await ID() # This step creates/loads and stores a new 
 
         # Create/Open wallet:
         elif Sov==4:
@@ -129,7 +130,6 @@ async def run():
             
         # Close and Clean-up:
         else:
-
 
 def main():
     loop = asyncio.get_event_loop()
