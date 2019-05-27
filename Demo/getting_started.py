@@ -14,6 +14,8 @@ from indy.error import ErrorCode, IndyError
 
 from src.utils import get_pool_genesis_txn_path, run_coroutine, PROTOCOL_VERSION
 
+IP = '192.168.0.197'
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -25,7 +27,6 @@ parser.add_argument('-c', '--config', help='entry point for dynamic library')
 parser.add_argument('-s', '--creds', help='entry point for dynamic library')
 
 args = parser.parse_args()
-
 
 # check if we need to dyna-load a custom wallet storage plug-in
 if args.storage_type:
@@ -46,10 +47,10 @@ async def run():
     logger.info("Getting started -> started")
 
     pool_ = {
-        'name': 'pool1'
+        'name': 'pool'
     }
     logger.info("Open Pool Ledger: {}".format(pool_['name']))
-    pool_['genesis_txn_path'] = get_pool_genesis_txn_path(pool_['name'])
+    pool_['genesis_txn_path'] = get_pool_genesis_txn_path(pool_['name'],IP)
     print(pool_['genesis_txn_path'])
     pool_['config'] = json.dumps({"genesis_txn": str(pool_['genesis_txn_path'])})
 
@@ -86,8 +87,12 @@ async def run():
 
     logger.info("\"Sovrin Steward\" -> Create and store in Wallet DID from seed")
     steward['did_info'] = json.dumps({'seed': steward['seed']})
-    steward['did'], steward['key'] = await did.create_and_store_my_did(steward['wallet'], steward['did_info'])
-
+    try:
+        steward['did'], steward['key'] = await did.create_and_store_my_did(steward['wallet'], steward['did_info'])
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.DidAlreadyExistsError:
+            pass
+            
     logger.info("==============================")
     logger.info("== Getting Trust Anchor credentials - Government Onboarding  ==")
     logger.info("------------------------------")

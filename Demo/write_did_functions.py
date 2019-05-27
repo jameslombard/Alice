@@ -17,14 +17,14 @@ def print_log(value_color="", value_noncolor=""):
     print(HEADER + value_color + ENDC + str(value_noncolor))
 
 # Step 1 of write_did:
-async def pool_configuration():
+async def pool_configuration(IP):
 
-    pool_name = input('Please specify the pool name:')
+    pool_name = input('Pool name?:')
 
     print_log('\n Setting up pool configuration.\n')
 
     pool_= {'name': pool_name}
-    genesis_file_path = get_pool_genesis_txn_path(pool_name)
+    genesis_file_path = get_pool_genesis_txn_path(pool_name,IP)
     pool_['config'] = json.dumps({'genesis_txn': str(genesis_file_path)})
 
     # Set pool PROTOCAL VERSION:
@@ -52,8 +52,6 @@ async def pool_configuration():
     with open(file_name, 'wb') as f:
         pickle.dump(pool_, f)
 
-    return(pool_)
-
 # Function for submitting a pool restart request:
 async def restart_pool(pool_,submitter):
     restart_request = await ledger.build_pool_restart_request(submitter['did'],'start','14:40')
@@ -76,8 +74,19 @@ async def create_wallet(name):
     # wallet we're now going to open it which allows us to interact with it by passing the
     # wallet_handle around.
 
+    pickle_file = name['name'] +'.pickle'
+
+    try:
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
+    except (FileNotFoundError) as e:
+        print('Sovrin insists...')
+        await ID()
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
+
     if 'wallet' in name:
-        return name
+        quit()
     else:
 
         try:       
@@ -97,10 +106,11 @@ async def create_wallet(name):
             if ex.error_code == ErrorCode.WalletAlreadyOpenedError:
                 pass
 
-        return(name)    
-
+    with open(pickle_file, 'wb') as f:
+        pickle.dump(name, f)        
+  
 # Step 3 of write_did:
-async def create_did_and_verkey(name):
+async def create_did_and_verkey():
 
     # First, put a steward DID and its keypair in the wallet. This doesn't write anything to the ledger,
     # but it gives us a key that we can use to sign a ledger transaction that we're going to submit later.
@@ -112,37 +122,56 @@ async def create_did_and_verkey(name):
     # when creating this DID--it guarantees that the same DID and key material are created that the genesis txns
     # expect.
 
-    if name['name'] == 'steward':
-        name['seed'] = '000000000000000000000000Steward1'
-        did_json = json.dumps({'seed': name['seed']})       
+    name = input('Who dis?:').strip()
+    pickle_file = name +'.pickle'
 
+    try:
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
+    except (FileNotFoundError) as e:
+        print('Sovrin insists...')
+        await ID()
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
+
+    if 'did' in name:
+        quit()
+    else:
+
+    # Handle case for Steward:
+
+        if name['name'] == 'steward':
+            name['seed'] = '000000000000000000000000Steward1'
+            did_json = json.dumps({'seed': name['seed']})       
+
+            try:
+                print_log('\n Generate and store steward DID and verkey\n')
+                name['did'],name['verkey'] = await did.create_and_store_my_did(name['wallet'], did_json) # Returns newly created steward DID and verkey
+            except IndyError as ex:
+                if ex.error_code == ErrorCode.DidAlreadyExistsError:
+                    pass
+
+            print_log('Steward DID: ', name['did'])
+            print_log('Steward Verkey: ', name['verkey'])
+            return(name)
+
+        # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
+        # this DID and its keys are secure and random. Again, we're not writing to the ledger yet.
+        
         try:
-            print_log('\n Generate and store steward DID and verkey\n')
-            name['did'],name['verkey'] = await did.create_and_store_my_did(name['wallet'], did_json) # Returns newly created steward DID and verkey
+            name['did'], name['verkey'] = await did.create_and_store_my_did(name['wallet'], "{}")
         except IndyError as ex:
             if ex.error_code == ErrorCode.DidAlreadyExistsError:
                 pass
 
-        print_log('Steward DID: ', name['did'])
-        print_log('Steward Verkey: ', name['verkey'])
-        return(name)
+        msg = '\n Generating and storing ' + name['name'] + ' DID and verkey\n'
+        print_log(msg)
 
-    # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
-    # this DID and its keys are secure and random. Again, we're not writing to the ledger yet.
-    
-    try:
-        name['did'], name['verkey'] = await did.create_and_store_my_did(name['wallet'], "{}")
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.DidAlreadyExistsError:
-            pass
+        print_log(name['name']+' DID:',name['did'])
+        print_log(name['name']+' Verkey:',name['verkey'])
 
-    msg = '\n Generating and storing ' + name['name'] + ' DID and verkey\n'
-    print_log(msg)
-
-    print_log(name['name']+' DID:', name['did'])
-    print_log(name['name']+' Verkey:',name['verkey'])
-
-    return(name)
+        with open (pickle_file, 'wb') as f:
+            pickle.dump(name,f)
 
 # Step 4 of write_did:
 async def nym_request(pool_,submitter,target,nymrole): 
@@ -151,8 +180,6 @@ async def nym_request(pool_,submitter,target,nymrole):
     #  
     #     :param role: Role of a user NYM record:
     #                          null (common USER)
-    #                          TRUSTEE
-    #                          STEWARD
     #                          TRUST_ANCHOR
     #                          NETWORK_MONITOR
     #                          empty string to reset role
@@ -162,7 +189,7 @@ async def nym_request(pool_,submitter,target,nymrole):
     # We submit this transaction under the authority of the steward DID that the ledger already recognizes.
     # This call will look up the private key of the steward DID in our wallet, and use it to sign the transaction.
 
-    print_log('\n Building NYM request to add Trust Anchor to the ledger\n')
+    print_log('\n Building NYM request\n')
     nym_transaction_request = await ledger.build_nym_request(submitter_did=submitter['did'],
                                                             target_did=target['did'],
                                                             ver_key=target['verkey'],
