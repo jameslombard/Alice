@@ -13,58 +13,65 @@ from indy.error import IndyError, ErrorCode
 
 # Required functions:
 
-from identity import ID
+from identity import ID, print_log, create_wallet, create_did_and_verkey
 
-from write_did_functions import print_log, pool_configuration, create_wallet, create_did_and_verkey, nym_request, query_did,cleanup
-from save_schema_and_cred_def_functions import schema_request, credential_definition
-from issue_credential_functions import prover_wallet_and_link_secret, offer_credential,request_credential, create_credential, process_and_store_credential
-from negotiate_proof_functions import build_proof_request, fetch_credentials, create_proof, verify_proof
+from write_did_functions import pool_configuration, nym_request, query_did, replace_keys, get_verkey, cleanup, delete_wallet
+from connection import connect
 from secure_messenger import messenger
 
-print_log('\n Welcome to Sovrin:\n')
-print_log('\n ______________________________________________________________\n')
-print_log('\n 1. Connect to the Sovrin nodes pool. \n')
-print_log('\n 2. Sovrin Messenger. \n')
-print_log('\n 3. Create/Load identity. \n')
-print_log('\n 4. Create and Open wallet for identity. \n')
-print_log('\n 5. Create DID and verkey for Identity. \n')
-print_log('\n 6. Create Connection (Onboarding). \n')    
-print_log('\n 7. Create NYM Request. \n')
-print_log('\n 8. Create GET_NYM Request. \n')
-print_log('\n 9. Replace Keys. \n')
-print_log('\n 10. Get key for DID on the ledger.')
-print_log('\n 11. Create Schema Request. \n')
-print_log('\n 12. Create Get Schema Request. \n')
-print_log('\n 13. Create Credential Definition. \n')
-print_log('\n 14. Create Prover Link Secret. \n')
-print_log('\n 15. Offer Credential. \n')
-print_log('\n 16. Request Credential. \n')
-print_log('\n 17. Create Credential. \n')
-print_log('\n 18. Process and Store Credential. \n')
-print_log('\n 19. Build Proof Request. \n')
-print_log('\n 20. Fetch Credentials. \n')
-print_log('\n 21. Create Proof. \n')
-print_log('\n 22. Verify Proof. \n')
-print_log('\n 23. Clean-up and Quit \n')
-print_log('\n ______________________________________________________________\n')  
+# from save_schema_and_cred_def_functions import schema_request, credential_definition
+# from issue_credential_functionls import prover_wallet_and_link_secret, offer_credential,request_credential, create_credential, process_and_store_credential
+# from negotiate_proof_functions import build_proof_request, fetch_credentials, create_proof, verify_proof
 
-IP = '192.168.11.215' # Network IP address for server of Nodes pool
-Sov = input('Please select:')
+IP = '192.168.11.59' # Network IP address for server of Nodes pool
 
 async def run():
 
+
     while True:
 
+        print_log('Welcome to Sovrin:')
+        print_log(' ______________________________________________________________')
+        print_log('1. Connect to the Sovrin nodes pool.')
+        print_log('2. Sovrin Messenger.')
+        print_log('3. Create/Load identity.')
+        print_log('4. Create and Open wallet for identity.')
+        print_log('5. Create DID and verkey for Identity (Public DID).')            
+        print_log('6. Create Connection (Private DID).')             
+        print_log('7. Create NYM Request.')
+        print_log('8. Query DID (GET_NYM Request).')
+        print_log('9. Replace Keys.')
+        print_log('10. Get Verkey for DID on the ledger.')
+        # print_log('11. Create Schema Request.')
+        # print_log('12. Create Get Schema Request.')
+        # print_log('13. Create Credential Definition.')
+        # print_log('14. Create Prover Link Secret.')
+        # print_log('15. Offer Credential.')
+        # print_log('16. Request Credential.')
+        # print_log('17. Create Credential.')
+        # print_log('18. Process and Store Credential.')
+        # print_log('19. Build Proof Request.')
+        # print_log('20. Fetch Credentials.')
+        # print_log('21. Create Proof.')
+        # print_log('22. Verify Proof.')
+        print_log('11. Clean-up.')
+        print_log('12. Delete Identity Owner Wallet.')    
+        print_log('13. Quit.')
+        print_log(' ______________________________________________________________')  
+
+        Sov = int(input('Please select:').strip())
+
         # Pool config:
+
         if Sov==1:   
 
-            pool_ = await pool_configuration(IP)
+            await pool_configuration(IP)
 
         # Send secure message:
         elif Sov==2:
 
             msg = None 
-            await messenger(IP,msg)
+            await messenger(IP)
 
         # Create ID: 
         elif Sov==3:
@@ -73,64 +80,77 @@ async def run():
 
         # Create/Open wallet:
         elif Sov==4:
+            await create_wallet()
 
         # Create DID and Verkey for identity owner:
         elif Sov==5:
+            await create_did_and_verkey()            
 
-        # Create DID and Verkey for connection:
-        elif Sov==6:
+        # Create connection:
+        elif Sov==5:
+            await connect()
 
         # Create NYM request:
         elif Sov==7:
+            await nym_request()
 
         # Create GET_NYM request:
         elif Sov==8:
+            await query_did()
 
         # Replace Keys:
         elif Sov==9:
-
+            await replace_keys()
+            
         # Get Verkey for DID on the Ledger:
         elif Sov==10:
+            await get_verkey()
 
-        # Create Schema Request:
-        elif Sov==11:
+        # # Create Schema Request:
+        # elif Sov==11:
 
-        # Create Get Schema Request:    
-        elif Sov==12: 
+        # # Create Get Schema Request:    
+        # elif Sov==12: 
 
-        # Create Credential Definition:
-        elif Sov==13:
+        # # Create Credential Definition:
+        # elif Sov==13:
 
-        # Create Prover Link Secret:
-        elif Sov==14:
+        # # Create Prover Link Secret:
+        # elif Sov==14:
 
-        # Offer Credential:
-        elif Sov==15:
+        # # Offer Credential:
+        # elif Sov==15:
 
-        # Request Credential:
-        elif Sov==16:
+        # # Request Credential:
+        # elif Sov==16:
 
-        # Create Credential:
-        elif Sov==17:
+        # # Create Credential:
+        # elif Sov==17:
 
-        # Process and Store Credential:
-        elif Sov==18:
+        # # Process and Store Credential:
+        # elif Sov==18:
 
-        # Build Proof Request:
-        elif Sov==19:
+        # # Build Proof Request:
+        # elif Sov==19:
 
-        # Fetch Credentials:
-        elif Sov==20:
+        # # Fetch Credentials:
+        # elif Sov==20:
 
-        # Create Proof:
-        elif Sov==21:
+        # # Create Proof:
+        # elif Sov==21:
 
-        # Verify Proof:
-        elif Sov==22:
+        # # Verify Proof:
+        # elif Sov==22:
             
         # Close and Clean-up:
+        elif Sov == 11:
+            await cleanup()
+        elif Sov == 12:
+            await delete_wallet()
         else:
+            break
 
+            
 def main():
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())

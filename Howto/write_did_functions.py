@@ -116,6 +116,7 @@ async def create_did_and_verkey(name):
 
         print_log('Steward DID: ', name['did'])
         print_log('Steward Verkey: ', name['verkey'])
+        
         return(name)
 
     # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
