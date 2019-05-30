@@ -88,14 +88,14 @@ async def nym_request(*args):
     print('2. Connection Response')
     print('3. Verinym')
 
-    tar = input('Please specify number:')
+    tar = int(input('Please specify number:'))
 
-    AdidB = 'did_for_'+target
-    AkeyB = 'key_for_'+target
-    BdidA = 'did_from_'+target
-    BkeyA = 'key_from_'+target
-    Bdid = target+'_did'
-    Bkey = target+'_key'
+    AdidB = 'did_for_'+target['name']
+    AkeyB = 'key_for_'+target['name']
+    BdidA = 'did_from_'+target['name']
+    BkeyA = 'key_from_'+target['name']
+    Bdid = target['name']+'_did'
+    Bkey = target['name']+'_key'
 
     if tar == 1:
         target['did'] = name[AdidB]
@@ -295,7 +295,7 @@ async def get_verkey(*args):
     print('1. Connection (Pairwise Pseudonymous Private DID)')
     print('2. Verinym (Public DID')
 
-    sel = input('Please select a number:')
+    sel = int(input('Please select a number:'))
 
     BdidA = 'did_from_'+Bname
     Bdid = Bname+'_did'
@@ -304,13 +304,13 @@ async def get_verkey(*args):
 
     if sel == 1:
         DID = name[BdidA]
-        name[BkeyA] = did.key_for_did(pool_handle=pool_['handle'],
-                            wallet_handle=name['handle'],
+        name[BkeyA] = await did.key_for_did(pool_handle=pool_['handle'],
+                            wallet_handle=name['wallet'],
                             did=DID)
     else:
         DID = name[Bdid]
-        name[Bkey] = did.key_for_did(pool_handle=pool_['handle'],
-                            wallet_handle=name['handle'],
+        name[Bkey] = await did.key_for_did(pool_handle=pool_['handle'],
+                            wallet_handle=name['wallet'],
                             did=DID)
                                              
     with open (pickle_file, 'wb') as f:

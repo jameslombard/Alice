@@ -37,6 +37,7 @@ async def messenger(IP):
 
         if re.match(cmd, 'crypt'):
             crypt = await activate_crypto(A,Bname)
+
         if re.match(cmd, 'prep'):
             msg = await prep(A,Bname,rest,crypt)
 
@@ -56,14 +57,18 @@ async def messenger(IP):
             msg = await request(A,Bname)
             crypt = 0
             msg = await prep(A,Bname,msg,crypt)
+
         elif re.match(cmd, 'connection response'): # Connection response
+
             msg = await response(A,Bname)
             crypt = 1
             msg = await prep(A,Bname,msg,crypt)
+
         elif re.match(cmd, 'verinym request'): # Request a verinym
             msg = await verinym_request(A,Bname)
             crypt = 1
             msg = await prep(A,Bname,msg,crypt)
+
         elif re.match(cmd, 'quit'):
             break
         else:
@@ -97,8 +102,8 @@ async def prep(A,Bname,msg,crypt):
 
     with open('message.dat', 'wb') as f:
         f.write(encrypted)
+        
     print('prepping %s' % msg)
-
     return encrypted
 
 async def read(A,crypt):
@@ -133,16 +138,16 @@ async def save(A,Bname,msg):
 
     # Function for saving a received message:
     print('Save as:')
-    print ('1. Connection request:')
+    print ('1. Connection request')
     print ('2. Connection response')
     print ('3. Verinym request')
 
-    sel = input('Please select a number:')
+    sel = int(input('Please select a number:'))
     if sel == 1: # Connection request
         
-        connection_request = json.loads(msg[1].decode('utf-8'))
+        connection_request = json.loads(msg)
         A[BdidA] = connection_request['did']
-        A['nonce'][Bname] = connection_request['nonce']
+        A['nonce'] = {Bname : connection_request['nonce']}
         print('Connection request information saved successfully.')
 
     elif sel == 2: # Connection response
@@ -150,7 +155,7 @@ async def save(A,Bname,msg):
         connection_response = json.loads(msg[1].decode('utf-8'))
         A[BdidA] = connection_response['did']
         A[BkeyA] = connection_response['verkey']
-        A['nonce'][Bname] = connection_response['nonce']
+        A['nonce'] = {Bname : connection_response['nonce']}
         initial_request = json.loads(A['connection_requests'][Bname])
 
         if initial_request['nonce'] == A['nonce'][Bname]:
@@ -200,7 +205,7 @@ async def request(A,Bname):
 
 async def response(A,Bname):
 
-        # This step assumes that a connection request has already been accepted and NYM request
+    # This step assumes that a connection request has already been accepted and NYM request
     # submitted for the responder.
 
     # AkeyB_ledger = await did.key_for_did(pool_['pool'], B['wallet'], B['connection_request']['did'])
@@ -230,8 +235,11 @@ async def response(A,Bname):
 async def verinym_request(A,Bname):
 
     await ID(A['name'])
+
+    pickle_file = A['name']+'.pickle'
+
     with open(pickle_file,'rb') as f:
-            A = pickle.load(f)   
+        A = pickle.load(f)   
 
     A['did_info'] = json.dumps({
         'did': A['did'],
@@ -241,6 +249,7 @@ async def verinym_request(A,Bname):
         pickle.dump(A, f)
 
     msg = A['did_info']
+    return msg
 
 async def server(msg): # Sender of message:
 
