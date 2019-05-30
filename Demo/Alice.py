@@ -27,9 +27,8 @@ IP = '192.168.11.59' # Network IP address for server of Nodes pool
 
 async def run():
 
-
     while True:
-
+        print_log('\n')
         print_log('Welcome to Sovrin:')
         print_log(' ______________________________________________________________')
         print_log('1. Connect to the Sovrin nodes pool.')
@@ -70,7 +69,6 @@ async def run():
         # Send secure message:
         elif Sov==2:
 
-            msg = None 
             await messenger(IP)
 
         # Create ID: 

@@ -31,6 +31,8 @@ async def ID(*args):
         await IDconfig(IDname)
         await create_wallet(IDname)
         await create_did_and_verkey(IDname)
+        with open(pickle_file, 'rb') as f:
+            name = pickle.load(f)
 
     if 'wallet' not in name:
         await create_wallet(IDname)        
@@ -38,9 +40,11 @@ async def ID(*args):
     if 'did' not in name:
         await create_did_and_verkey(IDname)
 
+    print('Hello '+IDname)
+
 async def IDconfig(IDname):        
 
-    print_log('\n Creating new ID for'+IDname+'\n')
+    print_log('\n Creating new ID for '+IDname+'\n')
     pickle_file = IDname+'.pickle'
 
     name = {'name': IDname}
@@ -85,14 +89,13 @@ async def create_wallet(*args):
         if ex.error_code == ErrorCode.WalletAlreadyExistsError:
             pass
 
-    msg = '\n Check wallet and get handle for '+ name['name']+ '\n'
-    print_log(msg)
-
     try:
         name['wallet'] = await wallet.open_wallet(name['wallet_config'], name['wallet_credentials'])
+        msg = '\n Open wallet for '+ name['name']+ '\n'
+        print_log(msg)
     except IndyError as ex:
         if ex.error_code == ErrorCode.WalletAlreadyOpenedError:
-            pass
+            pass         
 
     with open(pickle_file, 'wb') as f:
         pickle.dump(name, f)        
@@ -114,7 +117,7 @@ async def create_did_and_verkey(*args):
         IDname = input('Who dis? ')
     else: 
         for arg in args:
-            arg = IDname
+            IDname = arg
 
     pickle_file = IDname +'.pickle'
 
@@ -131,24 +134,29 @@ async def create_did_and_verkey(*args):
         await create_wallet(IDname)        
 
     # Handle case for Steward:
+    if 'did' not in name:
+        msg = '\n Generating and storing ' + name['name'] + ' DID and verkey\n'     
+        print_log(msg)
 
-    if name['name'] == 'steward':
-        name['seed'] = '000000000000000000000000Steward1'
-        did_json = json.dumps({'seed': name['seed']})       
-
+        if name['name'] == 'steward':
+            name['seed'] = '000000000000000000000000Steward1'
+            did_json = json.dumps({'seed': name['seed']})    
+            try:
+                name['did'], name['verkey'] = await did.create_and_store_my_did(name['wallet'], did_json)
+            except IndyError as ex:
+                if ex.error_code == ErrorCode.DidAlreadyExistsError:
+                    pass           
+        else:
     # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
     # this DID and its keys are secure and random. Again, we're not writing to the ledger yet.
-    msg = '\n Generating and storing ' + name['name'] + ' DID and verkey\n'     
-    print_log(msg)
-
-    try:
-        name['did'], name['verkey'] = await did.create_and_store_my_did(name['wallet'], "{}")
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.DidAlreadyExistsError:
-            pass
+            try:
+                name['did'], name['verkey'] = await did.create_and_store_my_did(name['wallet'], "{}")
+            except IndyError as ex:
+                if ex.error_code == ErrorCode.DidAlreadyExistsError:
+                    pass
 
     print_log(name['name']+' DID:',name['did'])
-    print_log(name['name']+' Verkey:',name['verkey'])
+    print_log(name['name']+' Verkey:',name['verkey'])        
 
     with open (pickle_file, 'wb') as f:
         pickle.dump(name,f)

@@ -14,7 +14,7 @@ import pprint
 from indy import pool, ledger, wallet, did, crypto
 from indy.error import IndyError, ErrorCode
 
-from identity import ID, print_log, create_wallet
+from identity import ID, print_log, ID,IDconfig,create_wallet,create_did_and_verkey
 
 async def connect():
 
@@ -23,23 +23,33 @@ async def connect():
 
     pickle_file = Aname +'.pickle'    
 
-    await create_wallet(Aname)
-    with open(pickle_file,'rb') as f:
-            A = pickle.load(f)    
+    try:
+        with open(pickle_file, 'rb') as f:
+            A = pickle.load(f)
+    except (FileNotFoundError) as e:
+        await IDconfig(Aname)
+        await create_wallet(Aname)
+        with open(pickle_file, 'rb') as f:
+            A = pickle.load(f)
+
+    if 'wallet' not in A:
+        await create_wallet(Aname)         
      
     AdidB = 'did_for_'+Bname
     AkeyB = 'key_for_'+Bname
     
-    try:
-        print_log('\n Generate and store unique pairwise pseudonymous DID and verkey in wallet\n')
-        A[AdidB],A[AkeyB] = await did.create_and_store_my_did(A['wallet'], "{}") # Returns newly created steward DID and verkey
-        # Save new version of A containing the did's and verkeys for the pairwise relationship:
-        with open(pickle_file, 'wb') as f:
-            pickle.dump(A, f)
-            
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.DidAlreadyExistsError:
-            pass
+    if AdidB not in A:
+        
+        try:
+            print_log('\n Generate and store unique Pairwise Pseudonymous DID and verkey in wallet\n')
+            A[AdidB],A[AkeyB] = await did.create_and_store_my_did(A['wallet'], "{}") # Returns newly created steward DID and verkey
+            # Save new version of A containing the did's and verkeys for the pairwise relationship:
+            with open(pickle_file, 'wb') as f:
+                pickle.dump(A, f)
+                
+        except IndyError as ex:
+            if ex.error_code == ErrorCode.DidAlreadyExistsError:
+                pass
 
     print_log(AdidB+': ',A[AdidB])
     print_log(AkeyB+': ',A[AkeyB])
