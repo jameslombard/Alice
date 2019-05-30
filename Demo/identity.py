@@ -3,32 +3,153 @@
 import pickle
 import json
 import asyncio
-from indy import wallet
+from indy import wallet,did
 from indy.error import IndyError, ErrorCode
 
-# Note: Official Sovrin Roles:
+def print_log(value_color="", value_noncolor=""):
+    """set the colors for text."""
+    HEADER = '\033[92m'
+    ENDC = '\033[0m'
+    print(HEADER + value_color + ENDC + str(value_noncolor))
 
-async def ID():
+# Script for building a Sovrin ID:
 
-    IDname = input('Who dis?')
+async def ID(*args):
+
+    if not args:
+        IDname = input('Who dis? ').strip()
+    else: 
+        for arg in args:
+            IDname = arg
+    
     pickle_file = IDname +'.pickle'
 
-    # Role can be:
-    # - Subject
-    # - Issuer
-    # - Holder
-    # - Prover
-    # - Verifier
+    try:
+        with open(pickle_file, 'rb') as f:
+            name = pickle.load(f)
+    except (FileNotFoundError) as e:
+        await IDconfig(IDname)
+        await create_wallet(IDname)
+        await create_did_and_verkey(IDname)
+
+    if 'wallet' not in name:
+        await create_wallet(IDname)        
+
+    if 'did' not in name:
+        await create_did_and_verkey(IDname)
+
+async def IDconfig(IDname):        
+
+    print_log('\n Creating new ID for'+IDname+'\n')
+    pickle_file = IDname+'.pickle'
+
+    name = {'name': IDname}
+    name['wallet_config'] = json.dumps({'id':name['name']+'_'+'wallet'})
+    name['wallet_credentials'] = json.dumps({'key':name['name']+'_'+'wallet_key'})
+
+    with open(pickle_file, 'wb') as f:
+        pickle.dump(name, f)
+
+async def create_wallet(*args):
+
+    # Creates a wallet using a generic config. Be sure to check the IndySDK python wrapper for
+    # detailed documentation of the different variations this wallet config can look like.
+    # Additionally, we're setting credentials which is how we password protect and encrypt our
+    # wallet. In this case, our password is "wallet_key" as defined in the template. In production,
+    # the user should define this and it should have some sort of complexity validation to provide
+    # proper protection of the wallet. DO NOT HARDCODE THIS IN PRODUCTION. Once we've created the
+    # wallet we're now going to open it which allows us to interact with it by passing the
+    # wallet_handle around.
+
+    if not args:
+        IDname = input('Who dis? ').strip()
+    else: 
+        for arg in args:
+            IDname = arg
+            
+    pickle_file = IDname +'.pickle'
 
     try:
         with open(pickle_file,'rb') as f:
-            name = pickle.load(f)  
-            quit()      
+            name = pickle.load(f)
     except (FileNotFoundError) as e:
-        name = {'name': IDname}
-        name['wallet_config'] = json.dumps({'id':name['name']+'_'+'wallet'})
-        name['wallet_credentials'] = json.dumps({'key':name['name']+'_'+'wallet_key'})
-        with open(pickle_file, 'wb') as f:
-            pickle.dump(name, f)
+        await IDconfig(IDname)
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
 
-    return name
+    try:       
+        await wallet.create_wallet(name['wallet_config'], name['wallet_credentials'])
+        msg = '\n Create new '+ name['name']+ ' wallet\n'
+        print_log(msg) 
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.WalletAlreadyExistsError:
+            pass
+
+    msg = '\n Check wallet and get handle for '+ name['name']+ '\n'
+    print_log(msg)
+
+    try:
+        name['wallet'] = await wallet.open_wallet(name['wallet_config'], name['wallet_credentials'])
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.WalletAlreadyOpenedError:
+            pass
+
+    with open(pickle_file, 'wb') as f:
+        pickle.dump(name, f)        
+  
+# Step 3 of write_did:
+async def create_did_and_verkey(*args):
+
+    # First, put a steward DID and its keypair in the wallet. This doesn't write anything to the ledger,
+    # but it gives us a key that we can use to sign a ledger transaction that we're going to submit later.
+
+    # The DID and public verkey for this steward key are already in the ledger; they were part of the genesis
+    # transactions we told the SDK to start with in the previous step. But we have to also put the DID, verkey,
+    # and private signing key into our wallet, so we can use the signing key to submit an acceptably signed
+    # transaction to the ledger, creating our *next* DID (which is truly new). This is why we use a hard-coded seed
+    # when creating this DID--it guarantees that the same DID and key material are created that the genesis txns
+    # expect.
+
+    if not args:
+        IDname = input('Who dis? ')
+    else: 
+        for arg in args:
+            arg = IDname
+
+    pickle_file = IDname +'.pickle'
+
+    try:
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
+    except (FileNotFoundError) as e:
+        await IDconfig(IDname)
+        await create_wallet(IDname)
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
+
+    if 'wallet' not in name:
+        await create_wallet(IDname)        
+
+    # Handle case for Steward:
+
+    if name['name'] == 'steward':
+        name['seed'] = '000000000000000000000000Steward1'
+        did_json = json.dumps({'seed': name['seed']})       
+
+    # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
+    # this DID and its keys are secure and random. Again, we're not writing to the ledger yet.
+    msg = '\n Generating and storing ' + name['name'] + ' DID and verkey\n'     
+    print_log(msg)
+
+    try:
+        name['did'], name['verkey'] = await did.create_and_store_my_did(name['wallet'], "{}")
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.DidAlreadyExistsError:
+            pass
+
+    print_log(name['name']+' DID:',name['did'])
+    print_log(name['name']+' Verkey:',name['verkey'])
+
+    with open (pickle_file, 'wb') as f:
+        pickle.dump(name,f)
+

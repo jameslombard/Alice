@@ -8,13 +8,7 @@ import pprint
 from indy import pool, ledger, wallet, did
 from indy.error import IndyError, ErrorCode
 from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine
-from identity import ID
-
-def print_log(value_color="", value_noncolor=""):
-    """set the colors for text."""
-    HEADER = '\033[92m'
-    ENDC = '\033[0m'
-    print(HEADER + value_color + ENDC + str(value_noncolor))
+from identity import print_log,ID, IDconfig, create_wallet, create_did_and_verkey
 
 # Step 1 of write_did:
 async def pool_configuration(IP):
@@ -53,128 +47,70 @@ async def pool_configuration(IP):
         pickle.dump(pool_, f)
 
 # Function for submitting a pool restart request:
-async def restart_pool(pool_,submitter):
-    restart_request = await ledger.build_pool_restart_request(submitter['did'],'start','14:40')
-    restart_request_response = await ledger.sign_and_submit_request(pool_handle=pool_['handle'],
-                                                                    wallet_handle=submitter['wallet'],
-                                                                    submitter_did=submitter['did'],
-                                                                    request_json=restart_request)
-    print_log('\n Pool Restart Request Response \n')
-    pprint.pprint(json.loads(restart_request_response))
-
-# Step 2 of write_did:
-async def create_wallet(name):
-
-    # Creates a wallet using a generic config. Be sure to check the IndySDK python wrapper for
-    # detailed documentation of the different variations this wallet config can look like.
-    # Additionally, we're setting credentials which is how we password protect and encrypt our
-    # wallet. In this case, our password is "wallet_key" as defined in the template. In production,
-    # the user should define this and it should have some sort of complexity validation to provide
-    # proper protection of the wallet. DO NOT HARDCODE THIS IN PRODUCTION. Once we've created the
-    # wallet we're now going to open it which allows us to interact with it by passing the
-    # wallet_handle around.
-
-    pickle_file = name['name'] +'.pickle'
-
-    try:
-        with open(pickle_file,'rb') as f:
-            name = pickle.load(f)
-    except (FileNotFoundError) as e:
-        print('Sovrin insists...')
-        await ID()
-        with open(pickle_file,'rb') as f:
-            name = pickle.load(f)
-
-    if 'wallet' in name:
-        quit()
-    else:
-
-        try:       
-            msg = '\n Create new '+ name['name']+ ' wallet\n'
-            print_log(msg) 
-            await wallet.create_wallet(name['wallet_config'], name['wallet_credentials'])
-        except IndyError as ex:
-            if ex.error_code == ErrorCode.WalletAlreadyExistsError:
-                pass
-
-        msg = '\n Open '+ name['name']+ ' wallet and get handle\n'
-        print_log(msg)
-
-        try:
-            name['wallet'] = await wallet.open_wallet(name['wallet_config'], name['wallet_credentials'])
-        except IndyError as ex:
-            if ex.error_code == ErrorCode.WalletAlreadyOpenedError:
-                pass
-
-    with open(pickle_file, 'wb') as f:
-        pickle.dump(name, f)        
-  
-# Step 3 of write_did:
-async def create_did_and_verkey():
-
-    # First, put a steward DID and its keypair in the wallet. This doesn't write anything to the ledger,
-    # but it gives us a key that we can use to sign a ledger transaction that we're going to submit later.
-
-    # The DID and public verkey for this steward key are already in the ledger; they were part of the genesis
-    # transactions we told the SDK to start with in the previous step. But we have to also put the DID, verkey,
-    # and private signing key into our wallet, so we can use the signing key to submit an acceptably signed
-    # transaction to the ledger, creating our *next* DID (which is truly new). This is why we use a hard-coded seed
-    # when creating this DID--it guarantees that the same DID and key material are created that the genesis txns
-    # expect.
-
-    name = input('Who dis?:').strip()
-    pickle_file = name +'.pickle'
-
-    try:
-        with open(pickle_file,'rb') as f:
-            name = pickle.load(f)
-    except (FileNotFoundError) as e:
-        print('Sovrin insists...')
-        await ID()
-        with open(pickle_file,'rb') as f:
-            name = pickle.load(f)
-
-    if 'did' in name:
-        quit()
-    else:
-
-    # Handle case for Steward:
-
-        if name['name'] == 'steward':
-            name['seed'] = '000000000000000000000000Steward1'
-            did_json = json.dumps({'seed': name['seed']})       
-
-            try:
-                print_log('\n Generate and store steward DID and verkey\n')
-                name['did'],name['verkey'] = await did.create_and_store_my_did(name['wallet'], did_json) # Returns newly created steward DID and verkey
-            except IndyError as ex:
-                if ex.error_code == ErrorCode.DidAlreadyExistsError:
-                    pass
-
-            print_log('Steward DID: ', name['did'])
-            print_log('Steward Verkey: ', name['verkey'])
-            return(name)
-
-        # Now, create a new DID and verkey for a trust anchor, and store it in our wallet as well. Don't use a seed;
-        # this DID and its keys are secure and random. Again, we're not writing to the ledger yet.
-        
-        try:
-            name['did'], name['verkey'] = await did.create_and_store_my_did(name['wallet'], "{}")
-        except IndyError as ex:
-            if ex.error_code == ErrorCode.DidAlreadyExistsError:
-                pass
-
-        msg = '\n Generating and storing ' + name['name'] + ' DID and verkey\n'
-        print_log(msg)
-
-        print_log(name['name']+' DID:',name['did'])
-        print_log(name['name']+' Verkey:',name['verkey'])
-
-        with open (pickle_file, 'wb') as f:
-            pickle.dump(name,f)
+# async def restart_pool(pool_,submitter):
+#     restart_request = await ledger.build_pool_restart_request(submitter['did'],'start','14:40')
+#     restart_request_response = await ledger.sign_and_submit_request(pool_handle=pool_['handle'],
+#                                                                     wallet_handle=submitter['wallet'],
+#                                                                     submitter_did=submitter['did'],
+#                                                                     request_json=restart_request)
+#     print_log('\n Pool Restart Request Response \n')
+#     pprint.pprint(json.loads(restart_request_response))
 
 # Step 4 of write_did:
-async def nym_request(pool_,submitter,target,nymrole): 
+async def nym_request(*args): 
+
+    # Load input:
+    #########################################################################
+
+    file_name = 'pool.pickle'
+    with open(file_name, 'rb') as f:
+        pool_ = pickle.load(f)  
+
+    if not args:
+        sub = input('Submitter? ').strip()
+    else: 
+        for arg in args:
+            sub = arg
+
+    pickle_file = sub+'.pickle'
+
+    await ID(sub) # Name, wallet and DID/Verkey creation
+
+    with open(pickle_file,'rb') as f:
+            name = pickle.load(f)
+      
+    submitter = name    
+
+    target = {'name': input('Target? ').strip()}
+
+    print('Submitting NYM Request for?')
+    print('1. Connection Request')
+    print('2. Connection Response')
+    print('3. Verinym')
+
+    tar = input('Please specify number:')
+
+    AdidB = 'did_for_'+target
+    AkeyB = 'key_for_'+target
+    BdidA = 'did_from_'+target
+    BkeyA = 'key_from_'+target
+    Bdid = target+'_did'
+    Bkey = target+'_key'
+
+    if tar == 1:
+        target['did'] = name[AdidB]
+        target['verkey'] = name[AkeyB]
+        nymrole = None
+    elif tar == 2:
+        target['did'] = name[BdidA]
+        target['verkey'] = name[BkeyA]
+        nymrole = None
+    else:
+        target['did'] = name[Bdid]
+        target['verkey'] = name[Bkey]
+        nymrole = 'TRUST_ANCHOR'
+
+    #########################################################################
 
     # Accepted values for nymrole: 
     #  
@@ -184,6 +120,12 @@ async def nym_request(pool_,submitter,target,nymrole):
     #                          NETWORK_MONITOR
     #                          empty string to reset role
     # :return: Request result as json.
+
+    # print(' - None')
+    # print(' - TRUST_ANCHOR')
+    # print(' - NETWORK_MONITOR')
+    # print(' - empty string to reset role')
+    # nymrole = input('Role of target?')
 
     # Here, we are building the transaction payload that we'll send to write the Trust Anchor identity to the ledger.
     # We submit this transaction under the authority of the steward DID that the ledger already recognizes.
@@ -195,6 +137,7 @@ async def nym_request(pool_,submitter,target,nymrole):
                                                             ver_key=target['verkey'],
                                                             alias=None,
                                                             role=nymrole)
+
     print_log('NYM transaction request: ')
     pprint.pprint(json.loads(nym_transaction_request))
 
@@ -214,8 +157,34 @@ async def nym_request(pool_,submitter,target,nymrole):
 
     # At this point, we have successfully written a new identity to the ledger. Our next step will be to query it.
 
-# Step 5 of write_did:
-async def get_nym_request(pool_,submitter,target):
+async def query_did(*args): # Same as a GET_NYM request
+    
+    # Load input:
+    #########################################################################
+
+    file_name = 'pool.pickle'
+    with open(file_name, 'rb') as f:
+        pool_ = pickle.load(f)  
+
+    if not args:
+        sub = input('Submitter? ').strip()
+    else: 
+        for arg in args:
+            sub = arg
+
+    pickle_file = sub+'.pickle'
+    
+    await ID(sub)
+    with open(pickle_file,'rb') as f:
+        name = pickle.load(f)
+    
+    submitter = name    
+    tar = input('Target? ').strip()  
+
+    Bdid = tar+'_did'
+    target = {'did':name[Bdid]}
+
+    ############################################################################
 
     print_log('\n Building the GET_NYM request to query trust anchor verkey\n')
 
@@ -235,14 +204,41 @@ async def get_nym_request(pool_,submitter,target):
 
     return(get_nym_response)
 
-# Primary function for replacing the verkeys of a Trust Anchor ('rotate_key.py' tutorial):
+async def replace_keys(*args):
 
-async def replace_keys(pool_,submitter,target,nymrole):
+    # Load input:
+    #########################################################################
+   
+    file_name = 'pool.pickle'
+    with open(file_name, 'rb') as f:
+        pool_ = pickle.load(f)  
+
+    if not args:
+        sub = input('Submitter? ').strip()
+    else: 
+        for arg in args:
+            sub = arg
+
+    pickle_file = sub+'.pickle'
+    
+    await ID(sub)
+    with open(pickle_file,'rb') as f:
+        name = pickle.load(f)
+    
+    submitter = name    
+         
+    print(' - None')
+    print(' - TRUST_ANCHOR')
+    print(' - NETWORK_MONITOR')
+    print(' - empty string to reset role')
+    nymrole = input('Role of new verkey?')
+
+    #########################################################################
 
     print_log('\n Generating new verkey of trust anchor in wallet\n')
 
     new_verkey = await did.replace_keys_start(submitter['wallet'], submitter['did'], "{}")
-    print_log('New Trust Anchor Verkey: ', new_verkey)
+    print_log('New Verkey: ', new_verkey)
     
     print_log('\n Building NYM request to update new verkey to ledger\n')
 
@@ -268,12 +264,81 @@ async def replace_keys(pool_,submitter,target,nymrole):
     print_log('\n Apply new verkey in wallet\n')
 
     await did.replace_keys_apply(submitter['wallet'], submitter['did'])
+    name['verkey'] = new_verkey
 
-async def cleanup(pool_,name):    # Do some cleanup.
+    with open (pickle_file, 'wb') as f:
+        pickle.dump(name,f) 
 
-    # Delete wallet: 0 -> No ; 1 -> Yes
+async def get_verkey(*args):
 
-    delete_wallet = 0 
+# Load input:
+#########################################################################
+    file_name = 'pool.pickle'
+    with open(file_name, 'rb') as f:
+        pool_ = pickle.load(f)  
+
+    if not args:
+        sub = input('Who dis? ').strip()
+    else: 
+        for arg in args:
+            sub = arg
+
+    pickle_file = sub+'.pickle'
+    
+    await create_wallet(sub)
+    with open(pickle_file,'rb') as f:
+        name = pickle.load(f)
+      
+    Bname = input("Who's key? ").strip()
+
+    print('Requesting key for?')
+    print('1. Connection (Pairwise Pseudonymous Private DID)')
+    print('2. Verinym (Public DID')
+
+    sel = input('Please select a number:')
+
+    BdidA = 'did_from_'+Bname
+    Bdid = Bname+'_did'
+    BkeyA = 'key_from_'+Bname
+    Bkey = Bname+'_key'
+
+    if sel == 1:
+        DID = name[BdidA]
+        name[BkeyA] = did.key_for_did(pool_handle=pool_['handle'],
+                            wallet_handle=name['handle'],
+                            did=DID)
+    else:
+        DID = name[Bdid]
+        name[Bkey] = did.key_for_did(pool_handle=pool_['handle'],
+                            wallet_handle=name['handle'],
+                            did=DID)
+                                             
+    with open (pickle_file, 'wb') as f:
+        pickle.dump(name,f)   
+
+async def cleanup(*args):    # Do some cleanup.
+
+# Load variables:
+##########################################################################
+    file_name = 'pool.pickle'
+    with open(file_name, 'rb') as f:
+        pool_ = pickle.load(f)      
+    
+    if not args:
+        IDname = input('Who closin? ').strip()
+    else: 
+        for arg in args:
+            IDname = arg
+
+    pickle_file = IDname+'.pickle'
+
+    try:
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)    
+    except (FileNotFoundError) as e:
+        pass
+
+#########################################################################
 
     msg = '\n Closing ' + name['name'] + ' wallet and pool\n'    
 
@@ -285,19 +350,33 @@ async def cleanup(pool_,name):    # Do some cleanup.
         if ex.error_code == ErrorCode.PoolLedgerInvalidPoolHandle:
             pass
 
-
-    msg = '\n Deleting ' + name['name'] + ' wallet\n'
-    print_log(msg)
-
-    try:
-        await wallet.delete_wallet(name['wallet_config'], name['wallet_credentials'])
-    except IndyError as ex:
-        if ex.error_code == ErrorCode.WalletNotFoundError:
-            pass
-
     try:
         await pool.delete_pool_ledger_config(pool_['name'])
         print_log('\n Deleting pool ledger config\n')
     except IndyError as ex:
         if ex.error_code == ErrorCode.CommonIOError:
+            pass
+
+async def delete_wallet(*args):
+
+    if not args:
+        IDname = input('Who dyin? ').strip()
+    else: 
+        for arg in args:
+            IDname = arg
+
+    pickle_file = IDname+'.pickle'
+
+    try:
+        with open(pickle_file,'rb') as f:
+            name = pickle.load(f)    
+        msg = '\n Deleting ' + IDname + ' wallet\n'
+        print_log(msg)            
+    except (FileNotFoundError) as e:
+        pass
+
+    try:
+        await wallet.delete_wallet(name['wallet_config'], name['wallet_credentials'])
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.WalletNotFoundError:
             pass
