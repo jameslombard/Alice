@@ -9,34 +9,34 @@ import random
 # Not used here, but will be required for the next steps
 from indy import crypto, did, wallet
 from identity import ID
-from write_did_functions import print_log, create_wallet, create_did_and_verkey
+from write_did_functions import print_log, create_wallet, did_and_verkey
 from connection import connect
 
 async def messenger(IP):
 
     A,Bname = await connect()
+    print('\n')
+    print('Is this an existing secure pairwise connection?')
+    print('1. Yes')
+    print('2. No')
+    crypt = int(input('Please select a number:'))
 
     print_log('\n The Messenger recognizes the following commands:\n')
-    print('crypt: Activate message encryption.')
+
     print('prep: Sender prepares a text message.')
     print('send: Sender server listens for client response.')
     print('receive: Receiver client connects to server and message is sent.')
     print('read: receiver reads the message.')
-    print('connection request: Sender prepares a connection request.')
-    print('connection response: Sender prepares a connection response.')
-    print('verinym request: Sender prepares a verinym request.')
+    print('request: Sender prepares a connection request.')
+    print('response: Sender prepares a connection response.')
+    print('verinym: Sender prepares a verinym request.')
     print('quit: Quit the messenger.')
     
-    crypt = 0 # Indicates whether message is to be encrypted (default : NO)
-
     while True:
 
         argv = input('> ').strip().split(' ')
         cmd = argv[0].lower()
         rest = ' '.join(argv[1:])
-
-        if re.match(cmd, 'crypt'):
-            crypt = await activate_crypto(A,Bname)
 
         if re.match(cmd, 'prep'):
             msg = await prep(A,Bname,rest,crypt)
@@ -48,23 +48,24 @@ async def messenger(IP):
             await client(IP)
 
         elif re.match(cmd, 'read'): 
-            msg = await read(A,crypt)
+            msg = await read(A,Bname,crypt)
 
         elif re.match(cmd, 'save'):
             await save(A,Bname,msg)
 
-        elif re.match(cmd, 'connection request'): # Connection request
+        elif re.match(cmd, 'request'): # Connection request
+
             msg = await request(A,Bname)
-            crypt = 0
+            crypt = 2
             msg = await prep(A,Bname,msg,crypt)
 
-        elif re.match(cmd, 'connection response'): # Connection response
+        elif re.match(cmd, 'response'): # Connection response
 
             msg = await response(A,Bname)
             crypt = 1
             msg = await prep(A,Bname,msg,crypt)
 
-        elif re.match(cmd, 'verinym request'): # Request a verinym
+        elif re.match(cmd, 'verinym'): # Request a verinym
             msg = await verinym_request(A,Bname)
             crypt = 1
             msg = await prep(A,Bname,msg,crypt)
@@ -74,29 +75,16 @@ async def messenger(IP):
         else:
             print('Huh?')
 
-async def activate_crypto(A,Bname):
-
-    crypt = 0
-
-    BkeyA = 'key_from_'+Bname
-
-    if BkeyA not in A:
-        print('Cannot activate Cryptography.')
-        print('Public key required')
-    else:
-        crypt = 1
-
-    return crypt
-
 async def prep(A,Bname,msg,crypt):
 
+    AkeyB = 'key_for_'+Bname
     BkeyA = 'key_from_'+Bname
 
-    if crypt == 0:
+    if crypt == 2:
         encrypted = bytes(msg, 'utf-8')
     else:
         msg = bytes(msg, "utf-8")
-        encrypted = await crypto.auth_crypt(A['wallet'],A['verkey'],A[BkeyA], msg)
+        encrypted = await crypto.auth_crypt(A['wallet'],A[AkeyB],A[BkeyA], msg)
         # encrypted = await crypto.anon_crypt(their_vk, msg)
         print('encrypted = %s' % repr(encrypted))
 
@@ -106,25 +94,29 @@ async def prep(A,Bname,msg,crypt):
     print('prepping %s' % msg)
     return encrypted
 
-async def read(A,crypt):
+async def read(A,Bname,crypt):
+
+    AkeyB = 'key_for_'+Bname 
 
     with open('message.dat', 'rb') as f:
         encrypted = f.read()
         print(repr(encrypted))
 
     if crypt == 1: 
-        decrypted = await crypto.auth_decrypt(A['wallet'],A['verkey'], encrypted)
+        decrypted = await crypto.auth_decrypt(A['wallet'],A[AkeyB], encrypted)
         # decrypted = await crypto.anon_decrypt(wallet_handle, my_vk, encrypted)
         print(decrypted)
-        verkey = decrypted[0].decode('utf-8')
+        print()
+        verkey = decrypted[0]
         print('Sender verkey:',verkey)
+        print()
         message = decrypted[1].decode('utf-8')
         
     else:
         message = encrypted.decode('utf-8')    
         decrypted = message
 
-    print('Message:', message)
+    print(message)
     return decrypted
 
 async def save(A,Bname,msg):
@@ -148,6 +140,7 @@ async def save(A,Bname,msg):
         connection_request = json.loads(msg)
         A[BdidA] = connection_request['did']
         A['nonce'] = {Bname : connection_request['nonce']}
+
         print('Connection request information saved successfully.')
 
     elif sel == 2: # Connection response
@@ -155,7 +148,7 @@ async def save(A,Bname,msg):
         connection_response = json.loads(msg[1].decode('utf-8'))
         A[BdidA] = connection_response['did']
         A[BkeyA] = connection_response['verkey']
-        A['nonce'] = {Bname : connection_response['nonce']}
+        A['nonce'] = {Bname: connection_response['nonce']}
         initial_request = json.loads(A['connection_requests'][Bname])
 
         if initial_request['nonce'] == A['nonce'][Bname]:
@@ -169,7 +162,7 @@ async def save(A,Bname,msg):
         A[Bdid] = verinym_request['did']
         A[Bkey] = verinym_request['verkey']
 
-        if A[BkeyA] == msg[0].decode('utf-8'):
+        if A[BkeyA] == msg[0]:
             print('Message sender verkey matches connection verkey.')
             print('Verinym request information is saved successfully')
 
@@ -192,7 +185,7 @@ async def request(A,Bname):
     A['connection_requests'] = {
         Bname : 
         json.dumps({'did': A[AdidB],
-        'nonce': a})
+                    'nonce': a})
         }
 
     msg = A['connection_requests'][Bname]
@@ -256,6 +249,11 @@ async def server(msg): # Sender of message:
     port = 50000                    # Reserve a port for your service every new transfer wants a new port or you must wait.
     s = socket.socket()             # Create a socket object
     host = ""                       # Get local machine name
+
+    # Allow for address re-use
+    # ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     s.bind((host, port))            # Bind to the port
     s.listen(5)                     # Now wait for client connection.
     print('Server listening...')
@@ -267,7 +265,8 @@ async def server(msg): # Sender of message:
     conn.sendall(msg)
     print('Message sent.')
     conn.close()
-        
+
+
 async def client(IP): # Receiver of message:
 
     s = socket.socket()             # Create a socket object

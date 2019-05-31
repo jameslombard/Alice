@@ -27,20 +27,19 @@ async def ID(*args):
     try:
         with open(pickle_file, 'rb') as f:
             name = pickle.load(f)
+
+        if 'wallet' not in name:
+            await create_wallet(IDname) 
+
+        if 'did' not in name:
+            await did_and_verkey(IDname)        
+
     except (FileNotFoundError) as e:
         await IDconfig(IDname)
         await create_wallet(IDname)
-        await create_did_and_verkey(IDname)
-        with open(pickle_file, 'rb') as f:
-            name = pickle.load(f)
+        await did_and_verkey(IDname)
 
-    if 'wallet' not in name:
-        await create_wallet(IDname)        
-
-    if 'did' not in name:
-        await create_did_and_verkey(IDname)
-
-    print('Hello '+IDname)
+    print('Hello '+IDname+' :)')
 
 async def IDconfig(IDname):        
 
@@ -101,7 +100,7 @@ async def create_wallet(*args):
         pickle.dump(name, f)        
   
 # Step 3 of write_did:
-async def create_did_and_verkey(*args):
+async def did_and_verkey(*args):
 
     # First, put a steward DID and its keypair in the wallet. This doesn't write anything to the ledger,
     # but it gives us a key that we can use to sign a ledger transaction that we're going to submit later.
@@ -124,14 +123,16 @@ async def create_did_and_verkey(*args):
     try:
         with open(pickle_file,'rb') as f:
             name = pickle.load(f)
+
+        if 'wallet' not in name:
+            await create_wallet(IDname) 
+
     except (FileNotFoundError) as e:
         await IDconfig(IDname)
         await create_wallet(IDname)
-        with open(pickle_file,'rb') as f:
-            name = pickle.load(f)
 
-    if 'wallet' not in name:
-        await create_wallet(IDname)        
+    with open(pickle_file,'rb') as f:
+        name = pickle.load(f)
 
     # Handle case for Steward:
     if 'did' not in name:
