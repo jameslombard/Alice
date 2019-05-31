@@ -4,11 +4,12 @@ import pickle
 import asyncio
 import json
 import pprint
+import os
 
 from indy import pool, ledger, wallet, did
 from indy.error import IndyError, ErrorCode
 from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine
-from identity import print_log,ID, IDconfig, create_wallet, create_did_and_verkey
+from identity import print_log,ID, IDconfig, create_wallet, did_and_verkey
 
 # Step 1 of write_did:
 async def pool_configuration(IP):
@@ -293,7 +294,7 @@ async def get_verkey(*args):
 
     print('Requesting key for?')
     print('1. Connection (Pairwise Pseudonymous Private DID)')
-    print('2. Verinym (Public DID')
+    print('2. Verinym (Public DID)')
 
     sel = int(input('Please select a number:'))
 
@@ -312,7 +313,12 @@ async def get_verkey(*args):
         name[Bkey] = await did.key_for_did(pool_handle=pool_['handle'],
                             wallet_handle=name['wallet'],
                             did=DID)
-                                             
+
+    if sel == 1:
+        print('Successfully stored the matching private Verkey from '+Bname+' connection request.')
+    else:
+        print('Successfully stored the matching public Verkey for '+Bname+' Verinym (Public DID).')
+
     with open (pickle_file, 'wb') as f:
         pickle.dump(name,f)   
 
@@ -341,6 +347,7 @@ async def cleanup(*args):    # Do some cleanup.
 #########################################################################
 
     msg = '\n Closing ' + name['name'] + ' wallet and pool\n'    
+    print_log(msg)
 
     await wallet.close_wallet(name['wallet'])
 
@@ -369,14 +376,25 @@ async def delete_wallet(*args):
 
     try:
         with open(pickle_file,'rb') as f:
-            name = pickle.load(f)    
-        msg = '\n Deleting ' + IDname + ' wallet\n'
-        print_log(msg)            
+            name = pickle.load(f)               
     except (FileNotFoundError) as e:
-        pass
+        await IDconfig(IDname)
+
+    with open(pickle_file,'rb') as f:
+        name = pickle.load(f)     
+
+    msg = '\n Deleting ' + IDname + ' wallet\n'
+    print_log(msg) 
 
     try:
         await wallet.delete_wallet(name['wallet_config'], name['wallet_credentials'])
     except IndyError as ex:
         if ex.error_code == ErrorCode.WalletNotFoundError:
             pass
+
+    # Once a wallet is deleted, the associated pickle path must also be deleted:
+    pickle_path = os.path.dirname(os.path.realpath(__file__))
+    path = pickle_path+'/'+pickle_file
+    os.remove(path)
+
+    print('Goodbye '+ IDname + ' :(')

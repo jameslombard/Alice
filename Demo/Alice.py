@@ -13,7 +13,7 @@ from indy.error import IndyError, ErrorCode
 
 # Required functions:
 
-from identity import ID, print_log, create_wallet, create_did_and_verkey
+from identity import ID, print_log, create_wallet, did_and_verkey
 
 from write_did_functions import pool_configuration, nym_request, query_did, replace_keys, get_verkey, cleanup, delete_wallet
 from connection import connect
@@ -23,7 +23,7 @@ from secure_messenger import messenger
 # from issue_credential_functionls import prover_wallet_and_link_secret, offer_credential,request_credential, create_credential, process_and_store_credential
 # from negotiate_proof_functions import build_proof_request, fetch_credentials, create_proof, verify_proof
 
-IP = '192.168.11.59' # Network IP address for server of Nodes pool
+IP = '192.168.0.106' # Network IP address for server of Nodes pool
 
 async def run():
 
@@ -34,8 +34,8 @@ async def run():
         print_log('1. Connect to the Sovrin nodes pool.')
         print_log('2. Sovrin Messenger.')
         print_log('3. Create/Load identity.')
-        print_log('4. Create and Open wallet for identity.')
-        print_log('5. Create DID and verkey for Identity (Public DID).')            
+        print_log('4. Create/Open wallet for identity.')
+        print_log('5. Create/Get DID and verkey for Identity (Public DID).')            
         print_log('6. Create Connection (Private DID).')             
         print_log('7. Create NYM Request.')
         print_log('8. Query DID (GET_NYM Request).')
@@ -82,7 +82,7 @@ async def run():
 
         # Create DID and Verkey for identity owner:
         elif Sov==5:
-            await create_did_and_verkey()            
+            await did_and_verkey()            
 
         # Create connection:
         elif Sov==5:
