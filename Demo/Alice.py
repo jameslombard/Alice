@@ -23,7 +23,7 @@ from secure_messenger import messenger
 # from issue_credential_functionls import prover_wallet_and_link_secret, offer_credential,request_credential, create_credential, process_and_store_credential
 # from negotiate_proof_functions import build_proof_request, fetch_credentials, create_proof, verify_proof
 
-IP = '192.168.0.106' # Network IP address for server of Nodes pool
+IP = '192.168.11.59' # Network IP address for server of Nodes pool
 
 async def run():
 
