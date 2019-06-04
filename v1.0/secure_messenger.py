@@ -185,7 +185,7 @@ async def save(A,Bname,msg):
 
         if initial_request['nonce'] == A['nonce'][Bname]:
             print_log('\n The Response is Nonce Authenticated \n')
-                print()
+            print()
             print('Connection response information is saved successfully.')
         else:
             print('The Nonce in the Response does not match the Nonce in the Request')
@@ -196,8 +196,9 @@ async def save(A,Bname,msg):
         A[Bkey] = verinym_request['verkey']
 
         if A[BkeyA] == msg[0]:
+            print()
             print('Message sender verkey matches connection verkey:')
-
+            print()
             print_log('Sender Verkey: ',msg[0])
             print_log(Bname+' Verkey: ',A[BkeyA])             
             print()

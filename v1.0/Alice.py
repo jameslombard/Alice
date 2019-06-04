@@ -102,23 +102,35 @@ async def run():
 
         # Create NYM request:
         elif Sov=='7':
-    
-            await nym_request(IP)
+
+            if IDname == '':
+                await nym_request(IP)
+            else:
+                await nym_request(IP,IDname)
 
         # Create GET_NYM request:
         elif Sov=='8':
 
-            await query_did(IP)
+            if IDname == '':
+                await query_did(IP)
+            else:
+                await query_did(IP,IDname)
 
         # Replace Keys:
         elif Sov=='9':
 
-            await replace_keys(IP)
-            
+            if IDname == '':
+                await replace_keys(IP)
+            else:
+                await replace_keys(IP,IDname)
+
         # Get Verkey for DID on the Ledger:
         elif Sov=='10':
 
-            await get_verkey(IP)
+            if IDname == '':
+                await get_verkey(IP)
+            else:
+                await get_verkey(IP,IDname)
 
         # # Create Schema Request:
         # elif Sov==11:

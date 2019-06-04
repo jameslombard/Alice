@@ -313,6 +313,7 @@ async def get_verkey(IP,*args):
     Bkey = Bname+'_key'
 
     if BdidA not in name:
+        print()
         print('Make sure you have the matching DID for the requested verkey.')
         return
 
@@ -328,12 +329,13 @@ async def get_verkey(IP,*args):
                             did=DID)
 
     if sel == 1:
+        print()
         print_log('Successfully stored the matching Verkey from '+Bname+' connection request (private pairwise DID).')
 
     else:
+        print()
         print_log('Successfully stored the matching Verkey for '+Bname+' Verinym (Public DID).')
         
-
     with open (pickle_file, 'wb') as f:
         pickle.dump(name,f)   
 
