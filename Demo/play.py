@@ -14,7 +14,9 @@ IP = '192.168.11.215'
 
 async def main():
 
-    await messenger(IP)
+    # await messenger(IP)
+    p = input('Whddup?').lower()
+    print(p)
 
 if __name__ == '__main__':
 
