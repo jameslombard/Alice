@@ -1,4 +1,6 @@
-""" This functions contains all the sub-functions called in order to run the 'write_did.py' tutorial """
+""" This functions contains all the sub-functions required for the following:
+    - connecting to the test Nodes Pool containing 4 steward NYM transactions
+    - """
 
 import pickle
 import asyncio
@@ -404,7 +406,8 @@ async def cleanup(IP,*args):    # Do some cleanup.
 async def delete_wallet(*args):
 
     if not args:
-        IDname = input('Who dyin? ').strip().lower()
+#       IDname = input('Who dyin? ').strip().lower()
+        IDname = input('Who dyin? ')
     else: 
         for arg in args:
             IDname = arg

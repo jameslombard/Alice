@@ -23,8 +23,8 @@ from secure_messenger import messenger
 # from issue_credential_functionls import prover_wallet_and_link_secret, offer_credential,request_credential, create_credential, process_and_store_credential
 # from negotiate_proof_functions import build_proof_request, fetch_credentials, create_proof, verify_proof
 
-IP = '192.168.11.59' # Network IP address for server of Nodes pool
-clientname = 'JameL' # Ip Address for messenger client (receiver)
+IP = 'JamesL' # Network IP address for server of Nodes pool
+clientname = 'JamesL' # Ip Address for messenger client (receiver)
 
 async def run():
 
@@ -61,7 +61,7 @@ async def run():
         print_log('13. Quit.')
         print_log(' ______________________________________________________________')  
 
-        Sov = (input('Please select:').strip())
+        Sov = input('Please select:').strip()
 
         # Pool config:
 
