@@ -157,7 +157,7 @@ async def save(A,Bname,msg):
         print('Save as:')
         print ('1. Connection request (DID for '+Bname+')')
         print ('2. Connection response (DID and Verkey from '+Bname+')')
-        print ('3. Verinym request ('+Bname+' DID and Verkey')
+        print ('3. Verinym request ('+Bname+' DID and Verkey)')
 
         sel = input('Please select a number:')
 
@@ -236,13 +236,6 @@ async def request(A,Bname):
 
 async def response(A,Bname):
 
-    # This step assumes that a connection request has already been accepted and NYM request
-    # submitted for the responder.
-
-    # AkeyB_ledger = await did.key_for_did(pool_['pool'], B['wallet'], B['connection_request']['did'])
-    # txt = A['name']+'_key_for_'+B['name']
-    # B[txt] = AkeyB_ledger
-
     pickle_file = A['name']+'.pickle'
 
     AdidB = 'did_for_'+Bname
@@ -303,7 +296,6 @@ async def server(msg): # Sender of message:
     conn.sendall(msg)
     print('Message sent.')
     conn.close()
-
 
 async def client(clientname): # Receiver of message:
 

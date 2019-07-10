@@ -21,21 +21,19 @@ async def ID(*args):
     else: 
         for arg in args:
             IDname = arg
-    
+                
     pickle_file = IDname +'.pickle'
 
     try:
         with open(pickle_file, 'rb') as f:
             name = pickle.load(f)
 
-        await create_wallet(IDname) 
-        await did_and_verkey(IDname)        
-
     except (FileNotFoundError) as e:
 
         await IDconfig(IDname)
-        await create_wallet(IDname)
-        await did_and_verkey(IDname)
+
+    await create_wallet(IDname) 
+    await did_and_verkey(IDname) 
 
     return IDname    
 
